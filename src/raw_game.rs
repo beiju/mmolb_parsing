@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use allocative::Allocative;
 use serde::{Deserialize, Serialize};
 use strum::EnumDiscriminants;
 
@@ -54,7 +55,7 @@ pub(crate) struct RawWeather {
 pub(crate) struct RawEvent {
     /// 0 is before the game has started
     pub inning: u8,
-    
+
     /// 2 when the game is over
     pub inning_side: u8,
 
@@ -68,7 +69,7 @@ pub(crate) struct RawEvent {
     pub on_1b: bool,
     pub on_2b: bool,
     pub on_3b: bool,
-    
+
     /// Empty string between innings, null before game
     pub on_deck: Option<String>,
     /// Empty string between innings, null before game
@@ -96,14 +97,16 @@ trait APIHistory {
     fn is_missing(&self) -> bool;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, EnumDiscriminants, Default)]
-#[strum_discriminants(derive(Serialize, Deserialize))]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, EnumDiscriminants, Default, Allocative,
+)]
+#[strum_discriminants(derive(Serialize, Deserialize, Allocative))]
 #[serde(untagged)]
 pub(crate) enum IndexHistory {
     #[default]
     Season0,
     #[serde(with = "none_as_empty_string")]
-    Season2(Option<u16>)
+    Season2(Option<u16>),
 }
 
 impl APIHistory for IndexHistory {
@@ -134,17 +137,24 @@ mod none_as_empty_string {
         match ValueOrEmptyString::deserialize(d) {
             Ok(ValueOrEmptyString::R(r)) => Ok(Some(r)),
             Ok(ValueOrEmptyString::S(s)) if s.is_empty() => Ok(None),
-            Ok(ValueOrEmptyString::S(_)) => Err(D::Error::custom("only empty strings may be provided")),
+            Ok(ValueOrEmptyString::S(_)) => {
+                Err(D::Error::custom("only empty strings may be provided"))
+            }
             Ok(ValueOrEmptyString::String(s)) if s.is_empty() => Ok(None),
-            Ok(ValueOrEmptyString::String(_)) => Err(D::Error::custom("only empty strings may be provided")),
+            Ok(ValueOrEmptyString::String(_)) => {
+                Err(D::Error::custom("only empty strings may be provided"))
+            }
             Err(err) => Err(err),
         }
     }
 
-    pub fn serialize<S, T: Serialize>(value: &Option<T>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    pub fn serialize<S, T: Serialize>(value: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         match value {
             Some(t) => t.serialize(serializer),
-            None => "".serialize(serializer)
+            None => "".serialize(serializer),
         }
     }
 }

@@ -1,16 +1,20 @@
-use std::collections::HashMap;
+use allocative::Allocative;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use strum::IntoDiscriminant;
 use tracing::error;
 
-use crate::{enums::{EventType, GameStat, Inning, MaybeRecognized, PitchType}, raw_game::{IndexHistory, IndexHistoryDiscriminants, RawEvent, RawGame, RawWeather}};
+use crate::{
+    enums::{EventType, GameStat, Inning, MaybeRecognized, PitchType},
+    raw_game::{IndexHistory, IndexHistoryDiscriminants, RawEvent, RawGame, RawWeather},
+};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Allocative)]
 pub enum GameDeserializeError {
-    GameStatNotRecognized
+    GameStatNotRecognized,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Allocative)]
 #[serde(from = "RawGame", into = "RawGame")]
 pub struct Game {
     #[serde(rename = "AwaySP")]
@@ -49,54 +53,130 @@ impl From<RawGame> for Game {
         let mut deserialization_error = Vec::new();
 
         let weather = value.weather.into();
-        let event_log: Vec<Event> = value.event_log.into_iter().map(|event| event.into()).collect();
+        let event_log: Vec<Event> = value
+            .event_log
+            .into_iter()
+            .map(|event| event.into())
+            .collect();
         let realm_id = value.realm;
-        let stats  = value.stats.into_iter().map(|(team, players)| {
-            let players = players.into_iter().map(|(player, stats)| {
-                let stats = stats.into_iter().map(|(stat, value)| {
-                    let stat: MaybeRecognized<GameStat> = stat.as_str().into();
-                    if let MaybeRecognized::NotRecognized(_) = &stat {
-                        deserialization_error.push(GameDeserializeError::GameStatNotRecognized);
-                    }
-                    (stat, value)
-                }).collect();
-                (player, stats)
-            }).collect();
-            (team, players)
-            }
-        ).collect();
+        let stats = value
+            .stats
+            .into_iter()
+            .map(|(team, players)| {
+                let players = players
+                    .into_iter()
+                    .map(|(player, stats)| {
+                        let stats = stats
+                            .into_iter()
+                            .map(|(stat, value)| {
+                                let stat: MaybeRecognized<GameStat> = stat.as_str().into();
+                                if let MaybeRecognized::NotRecognized(_) = &stat {
+                                    deserialization_error
+                                        .push(GameDeserializeError::GameStatNotRecognized);
+                                }
+                                (stat, value)
+                            })
+                            .collect();
+                        (player, stats)
+                    })
+                    .collect();
+                (team, players)
+            })
+            .collect();
 
         if deserialization_error.len() > 0 {
             error!("Event deserialize errors: {:?}", deserialization_error)
         }
 
         if value.extra_fields.len() > 0 {
-            error!("Deserialization found extra fields: {:?}", value.extra_fields)
+            error!(
+                "Deserialization found extra fields: {:?}",
+                value.extra_fields
+            )
         }
 
-        Self { extra_fields: value.extra_fields, away_sp: value.away_sp, away_team_abbreviation: value.away_team_abbreviation, away_team_color: value.away_team_color, away_team_emoji: value.away_team_emoji, away_team_id: value.away_team_id, away_team_name: value.away_team_name, home_sp: value.home_sp, home_team_abbreviation: value.home_team_abbreviation, home_team_color: value.home_team_color, home_team_emoji: value.home_team_emoji, home_team_id: value.home_team_id, home_team_name: value.home_team_name, day: value.day, state: value.state, season: value.season,
-                    weather, event_log, realm_id, stats, deserialization_errors: deserialization_error
-                }
+        Self {
+            extra_fields: value.extra_fields,
+            away_sp: value.away_sp,
+            away_team_abbreviation: value.away_team_abbreviation,
+            away_team_color: value.away_team_color,
+            away_team_emoji: value.away_team_emoji,
+            away_team_id: value.away_team_id,
+            away_team_name: value.away_team_name,
+            home_sp: value.home_sp,
+            home_team_abbreviation: value.home_team_abbreviation,
+            home_team_color: value.home_team_color,
+            home_team_emoji: value.home_team_emoji,
+            home_team_id: value.home_team_id,
+            home_team_name: value.home_team_name,
+            day: value.day,
+            state: value.state,
+            season: value.season,
+            weather,
+            event_log,
+            realm_id,
+            stats,
+            deserialization_errors: deserialization_error,
+        }
     }
 }
 impl From<Game> for RawGame {
     fn from(value: Game) -> Self {
         let weather = value.weather.into();
-        let event_log = value.event_log.into_iter().map(|event| event.into()).collect();
+        let event_log = value
+            .event_log
+            .into_iter()
+            .map(|event| event.into())
+            .collect();
         let realm = value.realm_id;
-        let stats: HashMap<String, HashMap<String, HashMap<String, i32>>>  = value.stats.into_iter().map(|(team, players)|
-            (team, players.into_iter().map(|(player, stats)|
-                (player, stats.into_iter().map(|(stat, value)| (stat.to_string(), value)).collect())
-            ).collect())
-        ).collect();
+        let stats: HashMap<String, HashMap<String, HashMap<String, i32>>> = value
+            .stats
+            .into_iter()
+            .map(|(team, players)| {
+                (
+                    team,
+                    players
+                        .into_iter()
+                        .map(|(player, stats)| {
+                            (
+                                player,
+                                stats
+                                    .into_iter()
+                                    .map(|(stat, value)| (stat.to_string(), value))
+                                    .collect(),
+                            )
+                        })
+                        .collect(),
+                )
+            })
+            .collect();
 
-        Self { away_sp: value.away_sp, away_team_abbreviation: value.away_team_abbreviation, away_team_color: value.away_team_color, away_team_emoji: value.away_team_emoji, away_team_id: value.away_team_id, away_team_name: value.away_team_name, home_sp: value.home_sp, home_team_abbreviation: value.home_team_abbreviation, home_team_color: value.home_team_color, home_team_emoji: value.home_team_emoji, home_team_id: value.home_team_id, home_team_name: value.home_team_name, day: value.day, state: value.state, season: value.season,
-            weather, event_log, realm, stats, extra_fields: value.extra_fields
+        Self {
+            away_sp: value.away_sp,
+            away_team_abbreviation: value.away_team_abbreviation,
+            away_team_color: value.away_team_color,
+            away_team_emoji: value.away_team_emoji,
+            away_team_id: value.away_team_id,
+            away_team_name: value.away_team_name,
+            home_sp: value.home_sp,
+            home_team_abbreviation: value.home_team_abbreviation,
+            home_team_color: value.home_team_color,
+            home_team_emoji: value.home_team_emoji,
+            home_team_id: value.home_team_id,
+            home_team_name: value.home_team_name,
+            day: value.day,
+            state: value.state,
+            season: value.season,
+            weather,
+            event_log,
+            realm,
+            stats,
+            extra_fields: value.extra_fields,
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Allocative)]
 #[serde(rename_all = "PascalCase")]
 pub struct Weather {
     pub emoji: String,
@@ -110,22 +190,32 @@ impl From<RawWeather> for Weather {
         if value.extra_fields.len() > 0 {
             error!("Extra fields: {:?}", value.extra_fields)
         }
-        Self { emoji: value.emoji, name: value.name, tooltip: value.tooltip, extra_fields: value.extra_fields }
+        Self {
+            emoji: value.emoji,
+            name: value.name,
+            tooltip: value.tooltip,
+            extra_fields: value.extra_fields,
+        }
     }
 }
 impl From<Weather> for RawWeather {
     fn from(value: Weather) -> Self {
-        Self { emoji: value.emoji, name: value.name, tooltip: value.tooltip, extra_fields: value.extra_fields }
+        Self {
+            emoji: value.emoji,
+            name: value.name,
+            tooltip: value.tooltip,
+            extra_fields: value.extra_fields,
+        }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Allocative)]
 pub enum EventDeserializeError {
     EventTypeNotRecognized,
-    PitchTypeNotRecognized
+    PitchTypeNotRecognized,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Allocative)]
 pub struct Event {
     pub inning: Inning,
 
@@ -139,7 +229,7 @@ pub struct Event {
     pub on_1b: bool,
     pub on_2b: bool,
     pub on_3b: bool,
-    
+
     pub on_deck: MaybePlayer<String>,
     pub batter: MaybePlayer<String>,
     pub pitcher: MaybePlayer<String>,
@@ -162,8 +252,13 @@ impl From<RawEvent> for Event {
 
         let inning = match (value.inning, value.inning_side) {
             (0, 1) => Inning::BeforeGame,
-            (number, 2) => Inning::AfterGame { total_inning_count: number - 1 },
-            (number, side) => Inning::DuringGame { number, batting_side: side.try_into().unwrap() }
+            (number, 2) => Inning::AfterGame {
+                total_inning_count: number - 1,
+            },
+            (number, side) => Inning::DuringGame {
+                number,
+                batting_side: side.try_into().unwrap(),
+            },
         };
         let pitch_info = (!value.pitch_info.is_empty()).then_some(value.pitch_info);
 
@@ -171,8 +266,10 @@ impl From<RawEvent> for Event {
         let on_deck = value.on_deck.into();
         let pitcher = value.pitcher.into();
 
-        let pitch = pitch_info.zip(value.zone).map(|(pitch_info, zone)| Pitch::new(pitch_info, zone));
-        
+        let pitch = pitch_info
+            .zip(value.zone)
+            .map(|(pitch_info, zone)| Pitch::new(pitch_info, zone));
+
         let event = value.event.as_str().into();
 
         if let MaybeRecognized::NotRecognized(_) = &event {
@@ -189,26 +286,56 @@ impl From<RawEvent> for Event {
             error!("Event deserialize errors: {:?}", deserialization_error)
         }
         if value.extra_fields.len() > 0 {
-            error!("Deserialization found extra fields: {:?}", value.extra_fields)
+            error!(
+                "Deserialization found extra fields: {:?}",
+                value.extra_fields
+            )
         }
 
         let index = match value.index {
             IndexHistory::Season0 => None,
-            IndexHistory::Season2(index) => index
+            IndexHistory::Season2(index) => index,
         };
         let index_format = value.index.discriminant();
 
-        Self {index_format, deserialization_error, inning, pitch, batter, pitcher, on_deck, event, away_score: value.away_score, home_score: value.home_score, balls: value.balls, strikes: value.strikes, outs: value.outs, on_1b: value.on_1b, on_2b: value.on_2b, on_3b: value.on_3b, message: value.message, extra_fields: value.extra_fields, index }
+        Self {
+            index_format,
+            deserialization_error,
+            inning,
+            pitch,
+            batter,
+            pitcher,
+            on_deck,
+            event,
+            away_score: value.away_score,
+            home_score: value.home_score,
+            balls: value.balls,
+            strikes: value.strikes,
+            outs: value.outs,
+            on_1b: value.on_1b,
+            on_2b: value.on_2b,
+            on_3b: value.on_3b,
+            message: value.message,
+            extra_fields: value.extra_fields,
+            index,
+        }
     }
 }
 impl From<Event> for RawEvent {
     fn from(value: Event) -> Self {
         let (inning, inning_side) = match value.inning {
             Inning::BeforeGame => (0, 1),
-            Inning::DuringGame { number, batting_side: side } => (number, side.into()),
-            Inning::AfterGame { total_inning_count } => (total_inning_count + 1, 2)
+            Inning::DuringGame {
+                number,
+                batting_side: side,
+            } => (number, side.into()),
+            Inning::AfterGame { total_inning_count } => (total_inning_count + 1, 2),
         };
-        let (pitch_info, zone) = value.pitch.map(Pitch::unparse).map(|(pitch, zone)| (pitch, Some(zone))).unwrap_or(("".to_string(), None));
+        let (pitch_info, zone) = value
+            .pitch
+            .map(Pitch::unparse)
+            .map(|(pitch, zone)| (pitch, Some(zone)))
+            .unwrap_or(("".to_string(), None));
         let event = value.event.to_string();
 
         let batter = value.batter.unparse();
@@ -217,10 +344,30 @@ impl From<Event> for RawEvent {
 
         let index = match value.index_format {
             IndexHistoryDiscriminants::Season0 => IndexHistory::Season0,
-            IndexHistoryDiscriminants::Season2 => IndexHistory::Season2(value.index)
+            IndexHistoryDiscriminants::Season2 => IndexHistory::Season2(value.index),
         };
 
-        Self {inning, inning_side, pitch_info, zone, event, batter, on_deck, pitcher, away_score: value.away_score, home_score: value.home_score, balls: value.balls, strikes: value.strikes, outs: value.outs, on_1b: value.on_1b, on_2b: value.on_2b, on_3b: value.on_3b, message: value.message, extra_fields: value.extra_fields, index }
+        Self {
+            inning,
+            inning_side,
+            pitch_info,
+            zone,
+            event,
+            batter,
+            on_deck,
+            pitcher,
+            away_score: value.away_score,
+            home_score: value.home_score,
+            balls: value.balls,
+            strikes: value.strikes,
+            outs: value.outs,
+            on_1b: value.on_1b,
+            on_2b: value.on_2b,
+            on_3b: value.on_3b,
+            message: value.message,
+            extra_fields: value.extra_fields,
+            index,
+        }
     }
 }
 
@@ -228,18 +375,18 @@ impl From<Event> for RawEvent {
 /// - The name of a batter (used when there is a batter)
 /// - An empty string (used when there is no batter during the game)
 /// - null (used before the game)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Allocative)]
 pub enum MaybePlayer<S> {
     Player(S),
     EmptyString,
-    Null
+    Null,
 }
 impl<S> MaybePlayer<S> {
     pub fn player(self) -> Option<S> {
         match self {
             MaybePlayer::Player(player) => Some(player),
             MaybePlayer::EmptyString => None,
-            MaybePlayer::Null => None
+            MaybePlayer::Null => None,
         }
     }
 }
@@ -248,7 +395,7 @@ impl MaybePlayer<String> {
         match self {
             MaybePlayer::Player(player) => MaybePlayer::Player(player.as_str()),
             MaybePlayer::EmptyString => MaybePlayer::EmptyString,
-            MaybePlayer::Null => MaybePlayer::Null
+            MaybePlayer::Null => MaybePlayer::Null,
         }
     }
 }
@@ -257,25 +404,27 @@ impl<S: From<&'static str>> MaybePlayer<S> {
         match self {
             MaybePlayer::Player(player) => Some(player),
             MaybePlayer::EmptyString => Some(S::from("")),
-            MaybePlayer::Null => None
+            MaybePlayer::Null => None,
         }
     }
 }
 impl<S: PartialEq<&'static str>> From<Option<S>> for MaybePlayer<S> {
     fn from(value: Option<S>) -> Self {
         match value {
-            Some(player) => if player == "" {
-                MaybePlayer::EmptyString
-            } else {
-                MaybePlayer::Player(player)
-            },
-            None => MaybePlayer::Null
+            Some(player) => {
+                if player == "" {
+                    MaybePlayer::EmptyString
+                } else {
+                    MaybePlayer::Player(player)
+                }
+            }
+            None => MaybePlayer::Null,
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Pitch  {
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Allocative)]
+pub struct Pitch {
     pub speed: f32,
     pub pitch_type: MaybeRecognized<PitchType>,
     pub zone: u8,
@@ -285,7 +434,11 @@ impl Pitch {
         let mut iter = pitch_info.split(" MPH ");
         let pitch_speed = iter.next().unwrap().parse().unwrap();
         let pitch_type = iter.next().unwrap().into();
-        Self { speed: pitch_speed, pitch_type, zone }
+        Self {
+            speed: pitch_speed,
+            pitch_type,
+            zone,
+        }
     }
     pub fn unparse(self) -> (String, u8) {
         let speed = format!("{:.1}", self.speed);
