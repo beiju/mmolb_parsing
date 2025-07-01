@@ -290,30 +290,43 @@ impl Inning {
 #[derive(EnumString, Display, Debug, Serialize, Deserialize, Clone, Copy, EnumIter, PartialEq, Eq, Hash)]
 pub enum Position {
     #[strum(to_string = "P")]
+    #[serde(rename = "P")]
     Pitcher,
     #[strum(to_string = "C")]
+    #[serde(rename = "C")]
     Catcher,
     #[strum(to_string = "1B")]
+    #[serde(rename = "1B")]
     FirstBaseman,
     #[strum(to_string = "2B")]
+    #[serde(rename = "2B")]
     SecondBaseman,
     #[strum(to_string = "3B")]
+    #[serde(rename = "3B")]
     ThirdBaseman,
     #[strum(to_string = "SS")]
+    #[serde(rename = "SS")]
     ShortStop,
     #[strum(to_string = "LF")]
+    #[serde(rename = "LF")]
     LeftField,
     #[strum(to_string = "CF")]
+    #[serde(rename = "CF")]
     CenterField,
     #[strum(to_string = "RF")]
+    #[serde(rename = "RF")]
     RightField,
     #[strum(to_string = "SP")]
+    #[serde(rename = "SP")]
     StartingPitcher,
     #[strum(to_string = "RP")]
+    #[serde(rename = "RP")]
     ReliefPitcher,
     #[strum(to_string = "CL")]
+    #[serde(rename = "CL")]
     Closer,
     #[strum(to_string = "DH")]
+    #[serde(rename = "DH")]
     DesignatedHitter
 }
 
