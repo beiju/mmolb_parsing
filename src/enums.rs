@@ -920,7 +920,6 @@ pub enum RecordType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, EnumString, Display, PartialEq, Eq, Hash, EnumIter)]
-#[serde(try_from = "&str", into = "DisplayDeserializer")]
 pub enum PositionType {
     Pitcher,
     Batter,
