@@ -884,13 +884,17 @@ pub enum Day {
     SuperstarBreak,
     #[serde(rename = "Postseason Preview")]
     PostseasonPreview,
+    #[serde(rename = "Postseason Round 1")]
+    PostseasonRound1,
+    #[serde(rename = "Postseason Round 2")]
+    PostseasonRound2,
+    #[serde(rename = "Postseason Round 3")]
+    PostseasonRound3,
     Holiday,
     #[serde(untagged)]
     Day(u8),
     #[serde(untagged, deserialize_with = "superstar_day_de", serialize_with = "superstar_day_ser")]
     SuperstarDay(u8),
-    #[serde(untagged, deserialize_with = "postseason_day_de", serialize_with = "postseason_day_ser")]
-    PostseasonDay(u8),
 }
 fn superstar_day_ser<S>(day: &u8, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
     format!("Superstar Day {day}").serialize(serializer)
@@ -903,17 +907,6 @@ fn superstar_day_de<'de, D>(deserializer: D) -> Result<u8, D::Error> where D: De
         .parse::<u8>()
         .map_err(|_| D::Error::custom("Expected a number"))
 }
-fn postseason_day_ser<S>(day: &u8, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-    format!("Postseason Day {day}").serialize(serializer)
-}
-
-fn postseason_day_de<'de, D>(deserializer: D) -> Result<u8, D::Error> where D: Deserializer<'de> {
-    <String>::deserialize(deserializer)?
-        .strip_prefix("Postseason Day ")
-        .ok_or(D::Error::custom("Didn't start with \"Postseason Day\""))?
-        .parse::<u8>()
-        .map_err(|_| D::Error::custom("Expected a number"))
-}
 
 impl Display for Day {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -921,10 +914,12 @@ impl Display for Day {
             Self::Preseason => "Preseason".fmt(f),
             Self::SuperstarBreak => "Superstar Break".fmt(f),
             Self::PostseasonPreview => "Postseason Preview".fmt(f),
+            Self::PostseasonRound1 => "Postseason Round 1".fmt(f),
+            Self::PostseasonRound2 => "Postseason Round 3".fmt(f),
+            Self::PostseasonRound3 => "Postseason Round 2".fmt(f),
             Self::Holiday => "Holiday".fmt(f),
             Self::Day(d) => d.fmt(f),
             Self::SuperstarDay(d) => write!(f, "Superstar Day {d}"),
-            Self::PostseasonDay(d) => write!(f, "Postseason Day {d}"),
         }
     }
 }
