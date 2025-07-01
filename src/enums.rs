@@ -883,6 +883,8 @@ pub enum Day {
     #[serde(rename = "Superstar Break")]
     SuperstarBreak,
     Holiday,
+    #[serde(rename = "Postseason Preview")]
+    PostseasonPreview,
     #[serde(untagged)]
     Day(u8),
     #[serde(untagged, deserialize_with = "superstar_day_de", serialize_with = "superstar_day_ser")]
@@ -907,6 +909,7 @@ impl Display for Day {
             Self::SuperstarBreak => "Superstar Break".fmt(f),
             Self::Day(d) => d.fmt(f),
             Self::Holiday => "Holiday".fmt(f),
+            Self::PostseasonPreview => "Postseason Preview".fmt(f),
             Self::SuperstarDay(d) => write!(f, "Superstar Day {d}")
         }
     }
