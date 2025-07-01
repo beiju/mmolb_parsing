@@ -890,6 +890,7 @@ fn superstar_day_de<'de, D>(deserializer: D) -> Result<u8, D::Error> where D: De
 impl Display for Day {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Preseason => "Preseason".fmt(f),
             Self::SuperstarBreak => "Superstar Break".fmt(f),
             Self::Day(d) => d.fmt(f),
             Self::Holiday => "Holiday".fmt(f),
