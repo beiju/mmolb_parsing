@@ -890,6 +890,7 @@ pub enum Day {
     PostseasonRound2,
     #[serde(rename = "Postseason Round 3")]
     PostseasonRound3,
+    Election,
     Holiday,
     #[serde(untagged)]
     Day(u8),
@@ -917,6 +918,7 @@ impl Display for Day {
             Self::PostseasonRound1 => "Postseason Round 1".fmt(f),
             Self::PostseasonRound2 => "Postseason Round 3".fmt(f),
             Self::PostseasonRound3 => "Postseason Round 2".fmt(f),
+            Self::Election => "Election".fmt(f),
             Self::Holiday => "Holiday".fmt(f),
             Self::Day(d) => d.fmt(f),
             Self::SuperstarDay(d) => write!(f, "Superstar Day {d}"),
