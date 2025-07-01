@@ -866,6 +866,7 @@ impl Display for FeedEventStatus {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter)]
 pub enum Day {
+    Preseason,
     #[serde(rename = "Superstar Break")]
     SuperstarBreak,
     Holiday,
