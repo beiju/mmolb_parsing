@@ -1,11 +1,13 @@
+use strum::Display;
 use std::fmt::Display;
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
-
+use strum::{EnumDiscriminants, EnumIter};
 use crate::{enums::{Attribute, CelestialEnergyTier, FeedEventSource, FeedEventType, ItemName, ItemPrefix, ItemSuffix, ModificationType, Slot}, feed_event::FeedEvent, parsed_event::{EmojiTeam, Item}, time::{Breakpoints, Timestamp}, NotRecognized};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Error)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Error, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum FeedEventParseError {
     #[error("feed event type {} not recognized", .0.0)]
     EventTypeNotRecognized(#[source] NotRecognized),
@@ -199,7 +201,8 @@ pub struct AttributeChange<S> {
     pub attribute: Attribute,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, EnumIter, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum GreaterAugment {
     Headliners,
     StartSmall,
@@ -207,7 +210,7 @@ pub enum GreaterAugment {
     LuckyDelivery,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FeedDelivery<S> {
     pub player: S,
     pub item: Item<S>,
@@ -245,7 +248,7 @@ impl<S: Display> FeedDelivery<S> {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EmojilessItem {
     pub prefix: Option<ItemPrefix>,
     pub item: ItemName,

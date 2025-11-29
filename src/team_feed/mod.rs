@@ -1,10 +1,11 @@
+use strum::Display;
 use std::fmt::Write;
 use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use itertools::Itertools;
-
+use strum::{EnumDiscriminants, EnumIter};
 use crate::{enums::{Attribute, FeedEventType, ModificationType}, feed_event::{EmojilessItem, FeedDelivery, FeedEvent, FeedEventParseError, FeedFallingStarOutcome}, time::{Breakpoints, Timestamp}, utils::extra_fields_deserialize};
 use crate::enums::{CelestialEnergyTier, FullSlot, Slot};
 use crate::feed_event::{AttributeChange, GreaterAugment};
@@ -21,7 +22,8 @@ pub struct TeamFeed {
     pub extra_fields: serde_json::Map<String, serde_json::Value>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, EnumIter, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum PurifiedOutcome {
     Payment(u32),
     NoCorruption,
@@ -38,7 +40,8 @@ impl PurifiedOutcome {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum ParsedTeamFeedEventText<S> {
     ParseError {
         error: FeedEventParseError,

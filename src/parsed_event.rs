@@ -1,7 +1,7 @@
 use std::{convert::Infallible, fmt::{Display, Write}, iter::once, str::FromStr};
 use std::fmt::{format, Formatter};
 use serde::{Serialize, Deserialize};
-use strum::{EnumDiscriminants, EnumString, Display, IntoStaticStr};
+use strum::{EnumDiscriminants, EnumString, Display, IntoStaticStr, EnumIter};
 use thiserror::Error;
 
 use crate::{enums::{Base, BaseNameVariant, BatterStat, Distance, EventType, FairBallDestination, FairBallType, FieldingErrorType, FoulType, GameOverMessage, HomeAway, ItemName, ItemPrefix, ItemSuffix, MoundVisitType, NowBattingStats, Place, StrikeType, TopBottom}, nom_parsing::shared::{hit_by_pitch_text, strike_out_text}, time::Breakpoints, Game, NotRecognized};
@@ -605,7 +605,7 @@ impl<S:Display> Display for FieldingAttempt<S> {
 }
 
 /// A team's emoji and name, which is how teams are usually presented in mmolb.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct EmojiTeam<S> {
     pub emoji: S,
     pub name: S
@@ -772,7 +772,8 @@ impl<S: Display> FallingStarOutcome<S> {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum ItemAffixes<S> {
     None,
     PrefixSuffix(Option<ItemPrefix>, Option<ItemSuffix>),
@@ -789,7 +790,7 @@ impl<S: AsRef<str>> ItemAffixes<S> {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Item<S> {
     pub item_emoji: S,
     pub item: ItemName,
@@ -828,7 +829,8 @@ impl<S: Display> Display for Item<S> {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum Delivery<S> {
     Successful {
         team: EmojiTeam<S>,
@@ -1427,7 +1429,8 @@ impl<S: AsRef<str>> Ejection<S> {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum ItemEquip<S> {
     None,
     Discarded,
@@ -1461,13 +1464,14 @@ impl<S: AsRef<str>> ItemEquip<S> {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ItemPrize<S> {
     pub item: Item<S>,
     pub equip: ItemEquip<S>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, EnumIter, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum Prize<S> {
     Tokens(u16),
     Items(Vec<ItemPrize<S>>)

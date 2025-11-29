@@ -1,3 +1,4 @@
+use strum::Display;
 use std::{fmt::Debug, str::FromStr};
 use std::fmt::{Display, Formatter};
 use nom::{branch::alt, bytes::complete::{tag, take, take_till, take_until, take_until1, take_while}, character::complete::{one_of, space0, u8, u16}, combinator::{all_consuming, fail, opt, recognize, rest, value, verify}, error::{ErrorKind, ParseError}, multi::{count, many0, many1, separated_list1}, sequence::{delimited, preceded, separated_pair, terminated}, AsChar, Input, Parser};
@@ -6,7 +7,7 @@ use nom::character::complete::u32;
 use nom::combinator::eof;
 use nom::number::double;
 use nom_language::error::VerboseError;
-
+use strum::{EnumDiscriminants, EnumIter};
 use crate::{enums::{Base, BatterStat, Day, FairBallDestination, FairBallType, HomeAway, NowBattingStats, Place}, feed_event::{EmojilessItem, FeedDelivery, FeedEvent}, game::Event, parsed_event::{BaseSteal, Cheer, Delivery, DoorPrize, Ejection, EjectionReason, EmojiTeam, Item, ItemAffixes, PlacedPlayer, Prize, RunnerAdvance, RunnerOut, SnappedPhotos, ViolationType}, player, time::{Breakpoints, Time}, Game};
 use crate::enums::{Attribute, BenchSlot, CelestialEnergyTier, FullSlot, ModificationType, Slot};
 use crate::feed_event::FeedFallingStarOutcome;
@@ -740,7 +741,7 @@ pub(super) fn door_prize<'output>(input: &'output str) -> IResult<'output, &'out
     )).parse(input)
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FeedEventParty<S> {
     pub player_name: S,
     pub amount_gained: u8,
@@ -796,7 +797,7 @@ pub(super) fn feed_event_party(input: &str) -> IResult<&str, FeedEventParty<&str
     }))
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FeedEventDoorPrize<S> {
     pub player_name: S,
     pub prize: Prize<S>,
@@ -901,7 +902,7 @@ fn full_slot(input: &str) -> IResult<&str, FullSlot> {
     )).parse(input)
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PositionSwap<S> {
     first_player_name: S,
     first_player_new_slot: FullSlot,
@@ -959,7 +960,8 @@ pub struct GrowAttributeChange {
     pub amount: f64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum GainedImmovable {
     No,
     Yes,

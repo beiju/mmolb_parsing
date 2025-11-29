@@ -1,7 +1,9 @@
+use strum::Display;
 use std::fmt::Display;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use strum::{EnumDiscriminants, EnumIter};
 use crate::{enums::{CelestialEnergyTier, Day, FeedEventType, LinkType, SeasonStatus}, utils::{extra_fields_deserialize, MaybeRecognizedHelper, MaybeRecognizedResult, TimestampHelper}};
 use crate::time::Breakpoints;
 
@@ -44,7 +46,8 @@ pub struct Link {
     pub extra_fields: serde_json::Map<String, serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum FeedFallingStarOutcome {
     Injury,
     Infusion(CelestialEnergyTier),
