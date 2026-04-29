@@ -342,6 +342,13 @@ pub enum ParsedEventMessage<S> {
         tokens_earnt: u32,
     },
     WeatherSimulacrumOffseason,
+
+    // Season 11
+    WeatherNoisy {
+        player_team: EmojiTeam<S>,
+        ump_team: EmojiTeam<S>,
+        tokens_earnt: u32,
+    },
 }
 impl<S: Display> ParsedEventMessage<S> {
     /// Recreate the event message this ParsedEvent was built out of.
@@ -1167,7 +1174,14 @@ impl<S: Display> ParsedEventMessage<S> {
                 format!("{real_team} were defeated by the {simulacrum_team} and earned {tokens_earnt} 🪙.")
             }
             Self::WeatherSimulacrumOffseason => {
-                format!("The Simulacrum yields no tokens during the Offseason.")
+                "The Simulacrum yields no tokens during the Offseason.".to_string()
+            }
+            Self::WeatherNoisy {
+                player_team,
+                ump_team,
+                tokens_earnt,
+            } => {
+                format!("{player_team} were defeated by the {ump_team} and earned {tokens_earnt} 🪙.")
             }
         }
     }

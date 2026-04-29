@@ -122,6 +122,7 @@ pub fn parse_event<'parse, 'output: 'parse>(
             weather_consumption(parsing_context).parse(event.message.as_str())
         }
         EventType::WeatherSimulacrum => weather_simulacrum().parse(event.message.as_str()),
+        EventType::WeatherNoisy => weather_noisy().parse(event.message.as_str()),
     }
     .finish()
     .map(|(_, o)| o)
@@ -1743,6 +1744,31 @@ fn weather_simulacrum<'parse, 'output: 'parse>(
             ParsedEventMessage::WeatherSimulacrum {
                 real_team,
                 simulacrum_team,
+                tokens_earnt,
+            },
+        ))
+    };
+
+    context("Weather Simulacrum", f)
+}
+
+fn weather_noisy<'parse, 'output: 'parse>(
+) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
+    let f = |input| {
+        let (input, player_team) = parse_terminated(" were defeated by the ").parse(input)?;
+        let (_, player_team) = emoji_team_eof(player_team)?;
+
+        let (input, ump_team) = parse_terminated(" and earned ").parse(input)?;
+        let (_, ump_team) = emoji_team_eof(ump_team)?;
+
+        let (input, tokens_earnt) = u32(input)?;
+        let (input, _) = tag(" 🪙.").parse(input)?;
+
+        Ok((
+            input,
+            ParsedEventMessage::WeatherNoisy {
+                player_team,
+                ump_team,
                 tokens_earnt,
             },
         ))
