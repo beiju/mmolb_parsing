@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display};
 
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -175,7 +175,7 @@ pub enum ParsedPlayerFeedEventText<S> {
         players: [S; 2],
         slot: Slot,
     },
-    ConsumptionContestToPlayer {
+    ConsumptionContestDelivery {
         delivery: FeedDelivery<S>,
     },
     ConsumptionContestToTeam {
@@ -205,6 +205,10 @@ pub enum ParsedPlayerFeedEventText<S> {
         player_name: S,
         boon_emoji: S,
         boon: ModificationType,
+    },
+    ResumedHolidayProcessingReplacement {
+        replaced_player_name: S,
+        replacement_player_name: S,
     }
 }
 
@@ -354,7 +358,7 @@ impl<S: Display> ParsedPlayerFeedEventText<S> {
             ParsedPlayerFeedEventText::PlayersSwapped { players: [player_one, player_two], slot } => {
                 format!("{player_one} swapped with {player_two} in {slot}.")
             },
-            ParsedPlayerFeedEventText::ConsumptionContestToPlayer { delivery } => delivery.unparse(event, "the Consumption Contest"),
+            ParsedPlayerFeedEventText::ConsumptionContestDelivery { delivery } => delivery.unparse(event, "the Consumption Contest"),
             ParsedPlayerFeedEventText::ConsumptionContestToTeam { team, earned_coins, item, tied } => {
                 let and_item = item.as_ref().map_or_else(
                     String::new,
@@ -381,6 +385,9 @@ impl<S: Display> ParsedPlayerFeedEventText<S> {
             },
             ParsedPlayerFeedEventText::LesserBoon { player_name, boon_emoji, boon } => {
                 format!("{player_name} was granted the {boon_emoji} {boon} Lesser Boon.")
+            },
+            ParsedPlayerFeedEventText::ResumedHolidayProcessingReplacement { replaced_player_name, replacement_player_name } => {
+                format!("Resumed Holiday processing: {replaced_player_name} was replaced by {replacement_player_name}.")
             }
         }
     }
