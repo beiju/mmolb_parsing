@@ -1921,6 +1921,14 @@ pub(super) fn lesser_boon(input: &str) -> IResult<'_, &str, (&str, &str, Modific
     Ok((input, (player_name, emoji, boon)))
 }
 
+pub(super) fn feed_event_resumed_processing(input: &str) -> IResult<'_, &str, (&str, &str)> {
+    let (input, _) = tag("Resumed Holiday processing: ").parse(input)?;
+    let (input, replaced_player_name) = parse_terminated(" was replaced by ").parse(input)?;
+    let (input, replacement_player_name) = parse_until_period_eof.parse(input)?;
+
+    Ok((input, (replaced_player_name, replacement_player_name)))
+}
+
 #[cfg(test)]
 mod test {
     use crate::{

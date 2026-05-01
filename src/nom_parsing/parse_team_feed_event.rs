@@ -1,4 +1,4 @@
-use crate::nom_parsing::shared::election_applied_level_ups;
+use crate::nom_parsing::shared::{election_applied_level_ups, feed_event_resumed_processing};
 use super::shared::{augment_event, bulk_immunized, emoji, emoji_team_eof, emoji_team_eof_maybe_no_space, feed_event_consumption_contest_specific, feed_event_contained, feed_event_delivery_discarded, feed_event_door_prize, feed_event_equipped_door_prize, feed_event_party, feed_event_wither, parse_until_period_eof, player_positions_swapped, player_reflected, players_election_swapped, purified, restyle, team_election_purified, training, Error, IResult};
 use crate::feed_event::{AttributeChange, GreaterAugment};
 use crate::nom_parsing::shared::{
@@ -21,6 +21,7 @@ use nom::{
     sequence::{delimited, preceded, separated_pair, terminated},
     Finish, Parser,
 };
+use crate::enums::PositionType;
 
 trait TeamFeedEventParser<'output>:
     Parser<&'output str, Output = ParsedTeamFeedEventText<&'output str>, Error = Error<'output>>
@@ -140,11 +141,11 @@ fn game(event: &FeedEvent) -> impl TeamFeedEventParser<'_> {
                 feed_event_consumption_contest_specific
                     .map(|(tied, team, earned_coins, item)|
                         ParsedTeamFeedEventText::ConsumptionContestToTeam { tied, team, earned_coins, item }),
-            )),
-            alt((
                 simulacrum_payout
                     .map(|(team, earned_coins)|
                         ParsedTeamFeedEventText::SimulacrumPayout { team, earned_coins }),
+            )),
+            alt((
                 gilded_umpires_payout
                     .map(|(team, earned_coins)|
                         ParsedTeamFeedEventText::GildedUmpiresPayout { team, earned_coins }),
@@ -353,11 +354,17 @@ fn election<'output>() -> impl TeamFeedEventParser<'output> {
             .map(|(player_name, num_level_ups)| ParsedTeamFeedEventText::ElectionAppliedLevelUps { player_name, num_level_ups }),
         bulk_immunized.map(|(team, num_players)| ParsedTeamFeedEventText::BulkImmunized { team, num_players }),
         player_reflected
-            .map(|(new_name, old_name, replacement_name)| ParsedTeamFeedEventText::PlayerReflected {
-                new_name: new_name.to_string(),
-                old_name: old_name.to_string(),
-                replacement_name: replacement_name.to_string(),
-            }),
+            .map(|(new_name, old_name, replacement_name)|
+                ParsedTeamFeedEventText::PlayerReflected { new_name, old_name, replacement_name }),
+        golden_player_emerged
+            .map(|(position_type, player_name, player_level)|
+                ParsedTeamFeedEventText::GoldenPlayerEmerged { position_type, player_name, player_level }),
+        golden_player_replacement_failed
+            .map(|(position_type, team)|
+                ParsedTeamFeedEventText::GoldenPlayerReplacementFailed { position_type, team }),
+        feed_event_resumed_processing
+            .map(|(replaced_player_name, replacement_player_name)|
+                ParsedTeamFeedEventText::ResumedHolidayProcessingReplacement { replaced_player_name, replacement_player_name }),
     )))
 }
 
@@ -812,6 +819,30 @@ pub(super) fn gilded_umpires_payout(input: &str) -> IResult<'_, &str, (EmojiTeam
     let (input, num_level_ups) = u32.parse(input)?;
     let (input, _) = tag(" 🪙 from the Gilded Umpires.").parse(input)?;
     Ok((input, (team, num_level_ups)))
+}
+
+pub(super) fn golden_player_replacement_failed(input: &str) -> IResult<'_, &str, (PositionType, EmojiTeam<&str>)> {
+    let (input, team_emoji_name) = parse_terminated(" failed to generate a replacement for Golden ").parse(input)?;
+    let (_, team) = emoji_team_eof.parse(team_emoji_name)?;
+    let (input, position_type) = parse_position_type.parse(input)?;
+    let (input, _) = tag(".").parse(input)?;
+    Ok((input, (position_type, team)))
+}
+
+pub(super) fn parse_position_type(input: &str) -> IResult<'_, &str, PositionType> {
+    alt((
+        tag("Pitcher").map(|_| PositionType::Pitcher),
+        tag("Batter").map(|_| PositionType::Batter),
+    )).parse(input)
+}
+
+pub(super) fn golden_player_emerged(input: &str) -> IResult<'_, &str, (PositionType, &str, u32)> {
+    let (input, player_name) = parse_terminated(" emerged as a Level ").parse(input)?;
+    let (input, player_level) = u32.parse(input)?;
+    let (input, _) = tag(" Golden ").parse(input)?;
+    let (input, position_type) = parse_position_type.parse(input)?;
+    let (input, _) = tag(".").parse(input)?;
+    Ok((input, (position_type, player_name, player_level)))
 }
 
 fn boon<'output>() -> impl TeamFeedEventParser<'output> {

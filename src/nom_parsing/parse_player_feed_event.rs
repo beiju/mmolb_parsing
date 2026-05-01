@@ -1,4 +1,4 @@
-use super::shared::{augment_event, lesser_boon, boon_recombobulated, falling_star, feed_event_contained, feed_event_door_prize, feed_event_effloresce, feed_event_efflorescence_growth,feed_event_equipped_door_prize, feed_event_party, feed_event_wither, grow, parse_until_period_eof, player_moved, player_positions_swapped,player_reflected, player_relegated, players_election_swapped, purified, restyle, election_applied_level_ups, Error, IResult};
+use super::shared::{augment_event, lesser_boon, boon_recombobulated, falling_star, feed_event_contained, feed_event_door_prize, feed_event_effloresce, feed_event_efflorescence_growth, feed_event_equipped_door_prize, feed_event_party, feed_event_wither, grow, player_moved, player_positions_swapped, player_reflected, player_relegated, players_election_swapped, purified, restyle, election_applied_level_ups, Error, IResult, feed_event_resumed_processing};
 use crate::feed_event::PlayerGreaterAugment;
 use crate::{
     enums::{FeedEventType, ModificationType},
@@ -665,12 +665,4 @@ fn boon<'output>(_event: &'output FeedEvent) -> impl PlayerFeedEventParser<'outp
             fail(),
         )),
     )
-}
-
-fn feed_event_resumed_processing(input: &str) -> IResult<'_, &str, (&str, &str)> {
-    let (input, _) = tag("Resumed Holiday processing: ").parse(input)?;
-    let (input, replaced_player_name) = parse_terminated(" was replaced by ").parse(input)?;
-    let (input, replacement_player_name) = parse_until_period_eof.parse(input)?;
-
-    Ok((input, (replaced_player_name, replacement_player_name)))
 }

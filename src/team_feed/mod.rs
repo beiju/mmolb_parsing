@@ -4,7 +4,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-use crate::enums::{Slot, WithNumberSign};
+use crate::enums::{Slot, PositionType, WithNumberSign};
 use crate::feed_event::{AttributeChange, GreaterAugment};
 pub use crate::nom_parsing::parse_team_feed_event::parse_team_feed_event;
 use crate::nom_parsing::shared::{FeedEventDoorPrize, FeedEventParty, Grow, PositionSwap};
@@ -240,9 +240,9 @@ pub enum ParsedTeamFeedEventText<S> {
         num_players: u32,
     },
     PlayerReflected {
-        new_name: String,
-        old_name: String,
-        replacement_name: String,
+        new_name: S,
+        old_name: S,
+        replacement_name: S,
     },
     SimulacrumPayout {
         team: EmojiTeam<S>,
@@ -251,6 +251,19 @@ pub enum ParsedTeamFeedEventText<S> {
     GildedUmpiresPayout {
         team: EmojiTeam<S>,
         earned_coins: u32,
+    },
+    GoldenPlayerReplacementFailed {
+        position_type: PositionType,
+        team: EmojiTeam<S>,
+    },
+    ResumedHolidayProcessingReplacement {
+        replaced_player_name: S,
+        replacement_player_name: S,
+    },
+    GoldenPlayerEmerged {
+        position_type: PositionType,
+        player_name: S,
+        player_level: u32,
     }
 }
 
@@ -491,6 +504,15 @@ impl<S: Display> ParsedTeamFeedEventText<S> {
             }
             ParsedTeamFeedEventText::GildedUmpiresPayout { team, earned_coins } => {
                 format!("{team} earned {earned_coins} 🪙 from the Gilded Umpires.")
+            }
+            ParsedTeamFeedEventText::GoldenPlayerReplacementFailed { position_type, team } => {
+                format!("{team} failed to generate a replacement for Golden {position_type}.")
+            }
+            ParsedTeamFeedEventText::ResumedHolidayProcessingReplacement { replaced_player_name, replacement_player_name } => {
+                format!("Resumed Holiday processing: {replaced_player_name} was replaced by {replacement_player_name}.")
+            }
+            ParsedTeamFeedEventText::GoldenPlayerEmerged { position_type, player_name, player_level } => {
+                format!("{player_name} emerged as a Level {player_level} Golden {position_type}.")
             }
         }
     }
