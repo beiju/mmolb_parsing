@@ -247,6 +247,10 @@ pub enum ParsedTeamFeedEventText<S> {
     SimulacrumPayout {
         team: EmojiTeam<S>,
         earned_coins: u32,
+    },
+    GildedUmpiresPayout {
+        team: EmojiTeam<S>,
+        earned_coins: u32,
     }
 }
 
@@ -484,6 +488,9 @@ impl<S: Display> ParsedTeamFeedEventText<S> {
             }
             ParsedTeamFeedEventText::SimulacrumPayout { team, earned_coins } => {
                 format!("{team} earned {earned_coins} 🪙 from Simulacrum.")
+            }
+            ParsedTeamFeedEventText::GildedUmpiresPayout { team, earned_coins } => {
+                format!("{team} earned {earned_coins} 🪙 from the Gilded Umpires.")
             }
         }
     }

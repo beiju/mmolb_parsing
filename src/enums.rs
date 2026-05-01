@@ -2357,6 +2357,7 @@ pub enum ModificationType {
     Courier,
     Granite,
     Satellite,
+    Loyal,
 
     #[strum(default)]
     #[serde(untagged)]

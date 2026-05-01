@@ -145,6 +145,9 @@ fn game(event: &FeedEvent) -> impl TeamFeedEventParser<'_> {
                 simulacrum_payout
                     .map(|(team, earned_coins)|
                         ParsedTeamFeedEventText::SimulacrumPayout { team, earned_coins }),
+                gilded_umpires_payout
+                    .map(|(team, earned_coins)|
+                        ParsedTeamFeedEventText::GildedUmpiresPayout { team, earned_coins }),
                 fail(),
             )),
         ))
@@ -799,6 +802,15 @@ pub(super) fn simulacrum_payout(input: &str) -> IResult<'_, &str, (EmojiTeam<&st
 
     let (input, num_level_ups) = u32.parse(input)?;
     let (input, _) = tag(" 🪙 from Simulacrum.").parse(input)?;
+    Ok((input, (team, num_level_ups)))
+}
+
+pub(super) fn gilded_umpires_payout(input: &str) -> IResult<'_, &str, (EmojiTeam<&str>, u32)> {
+    let (input, team_emoji_name) = parse_terminated(" earned ").parse(input)?;
+    let (_, team) = emoji_team_eof.parse(team_emoji_name)?;
+
+    let (input, num_level_ups) = u32.parse(input)?;
+    let (input, _) = tag(" 🪙 from the Gilded Umpires.").parse(input)?;
     Ok((input, (team, num_level_ups)))
 }
 
