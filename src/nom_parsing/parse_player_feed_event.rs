@@ -19,6 +19,7 @@ use nom::{
     sequence::{delimited, preceded, separated_pair, terminated},
     Finish, Parser,
 };
+use crate::enums::DurabilityType;
 
 trait PlayerFeedEventParser<'output>:
     Parser<&'output str, Output = ParsedPlayerFeedEventText<&'output str>, Error = Error<'output>>
@@ -490,7 +491,11 @@ fn seasonal_durability_loss_happened(
     // This may need more intelligent parsing if " lost " is ever a player name substring
     let (input, player_name) = parse_terminated(" lost ").parse(input)?;
     let (input, durability_lost) = u32.parse(input)?;
-    let (input, _) = tag(" durability for playing in Season ").parse(input)?;
+    let (input, durability_type) = alt((
+        tag(" durability for playing in Season ").map(|_| None),
+        tag(" LesserDurability in the Lesser League for playing in Season ").map(|_| Some(DurabilityType::Lesser)),
+        tag(" GreaterDurability in the Greater League for playing in Season ").map(|_| Some(DurabilityType::Greater)),
+    )).parse(input)?;
     let (input, season) = u32.parse(input)?;
     let (input, _) = tag(".").parse(input)?;
 
@@ -498,6 +503,7 @@ fn seasonal_durability_loss_happened(
         input,
         ParsedPlayerFeedEventText::SeasonalDurabilityLoss {
             player_name,
+            durability_type,
             durability_lost: Some(durability_lost),
             season,
         },
@@ -514,9 +520,9 @@ fn seasonal_durability_loss_blocked(
     let (input, _) = tag(".").parse(input)?;
 
     Ok((
-        input,
-        ParsedPlayerFeedEventText::SeasonalDurabilityLoss {
+        input, ParsedPlayerFeedEventText::SeasonalDurabilityLoss {
             player_name,
+            durability_type: None,
             durability_lost: None,
             season,
         },

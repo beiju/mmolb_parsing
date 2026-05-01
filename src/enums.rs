@@ -2389,6 +2389,25 @@ impl ModificationType {
     IntoStaticStr,
     Display,
 )]
+pub enum DurabilityType {
+    Greater,
+    Lesser,
+}
+
+#[derive(
+    Debug,
+    Serialize,
+    Deserialize,
+    Clone,
+    Copy,
+    EnumIter,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumString,
+    IntoStaticStr,
+    Display,
+)]
 pub enum CelestialEnergyTier {
     BeganToGlow,
     Infused,

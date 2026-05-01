@@ -15,7 +15,7 @@ use crate::{
     time::{Breakpoints, Timestamp},
     utils::extra_fields_deserialize,
 };
-use crate::enums::Slot;
+use crate::enums::{DurabilityType, Slot};
 use crate::parsed_event::{EmojiTeam, GrowAttributeChange, Item};
 
 #[serde_as]
@@ -100,6 +100,10 @@ pub enum ParsedPlayerFeedEventText<S> {
     },
     SeasonalDurabilityLoss {
         player_name: S,
+        // None means this event was from before durability types were split,
+        // or if the Prolific boon is reintroduced post-s11 it may indicate that
+        // the player resisted the durability loss (check `durability_lost`)
+        durability_type: Option<DurabilityType>,
         // None means that the Prolific boon resisted the durability loss
         durability_lost: Option<u32>,
         season: u32,
@@ -280,11 +284,17 @@ impl<S: Display> ParsedPlayerFeedEventText<S> {
                 let emoji = (matches!(event.event_type, Ok(FeedEventType::Game))).then_some("😇 ").unwrap_or_default();
                 format!("{emoji}{previous} retired from MMOLB!{new}")
             }
-            ParsedPlayerFeedEventText::SeasonalDurabilityLoss { player_name, durability_lost, season } => {
+            ParsedPlayerFeedEventText::SeasonalDurabilityLoss { player_name, durability_type, durability_lost, season } => {
+                let durability_str = match durability_type {
+                    None if durability_lost.is_none() => "Durability",
+                    None => "durability",
+                    Some(DurabilityType::Lesser) => "LesserDurability in the Lesser League",
+                    Some(DurabilityType::Greater) => "GreaterDurability in the Greater League",
+                };
                 if let Some(durability_lost) = durability_lost {
-                    format!("{player_name} lost {durability_lost} durability for playing in Season {season}.")
+                    format!("{player_name} lost {durability_lost} {durability_str} for playing in Season {season}.")
                 } else {
-                    format!("{player_name}'s Prolific Greater Boon resisted Durability loss for Season {season}.")
+                    format!("{player_name}'s Prolific Greater Boon resisted {durability_str} loss for Season {season}.")
                 }
             }
             ParsedPlayerFeedEventText::CorruptedByWither { player_name } => {
