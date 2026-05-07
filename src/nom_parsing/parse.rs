@@ -21,7 +21,6 @@ use nom::{bytes::complete::take_till, character::complete::u32, error::ErrorKind
 use nom::{character::complete::space0, sequence::pair};
 use phf::phf_map;
 use std::str::FromStr;
-
 use super::{
     shared::{
         all_consuming_sentence_and, base_steal_sentence, bold, destination, emoji_team_eof,
@@ -31,8 +30,8 @@ use super::{
     },
     ParsingContext,
 };
-use crate::nom_parsing::shared::{efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, wither, IResult};
-use crate::parsed_event::{ContainResult, PartyDurabilityLoss, WitherResult};
+use crate::nom_parsing::shared::{efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, wither, Error, IResult};
+use crate::parsed_event::{ContainResult, PartyDurabilityLoss, PlacedPlayer, WitherResult};
 use crate::{
     enums::{EventType, GameOverMessage, HomeAway, MoundVisitType, NowBattingStats},
     game::Event,
@@ -46,6 +45,7 @@ use crate::{
     time::Breakpoints,
     ParsedEventMessage,
 };
+use crate::enums::Place;
 
 const OVERRIDES: phf::Map<&'static str, phf::Map<u16, ParsedEventMessage<&'static str>>> =
     phf_map!();
@@ -1272,10 +1272,47 @@ fn inning_start<'parse, 'output: 'parse>(
     context("Inning Start", all_consuming(parser))
 }
 
-fn mound_visit<'parse, 'output: 'parse>(
+// TODO The below could be condensed into fewer parsers that take either
+//   "mound visit" or "pitching change" as a parameter
+fn parse_mound_visit_basic(input: &str) -> IResult<'_, &str, EmojiTeam<&str>> {
+    let (input, _) = tag("The ").parse(input)?;
+    let (input, emoji_team_str) = parse_terminated(" manager is making a mound visit.").parse(input)?;
+    let (_, emoji_team) = emoji_team_eof.parse(emoji_team_str)?;
+    Ok((input, emoji_team))
+}
+
+fn parse_mound_visit_basic_with_manager(input: &str) -> IResult<'_, &str, (&str, EmojiTeam<&str>)> {
+    let (input, _) = tag("Manager ").parse(input)?;
+    // Nobody submit the name "of the" please
+    let (input, manager_name) = parse_terminated(" of the ").parse(input)?;
+    let (input, emoji_team_str) = parse_terminated(" is making a mound visit.").parse(input)?;
+    let (_, emoji_team) = emoji_team_eof.parse(emoji_team_str)?;
+    Ok((input, (manager_name, emoji_team)))
+}
+
+fn parse_mound_visit_pitching_change(input: &str) -> IResult<'_, &str, EmojiTeam<&str>> {
+    let (input, _) = tag("The ").parse(input)?;
+    let (input, emoji_team_str) = parse_terminated(" manager is making a pitching change.").parse(input)?;
+    let (_, emoji_team) = emoji_team_eof.parse(emoji_team_str)?;
+    Ok((input, emoji_team))
+}
+
+fn parse_mound_visit_pitching_change_with_manager(input: &str) -> IResult<'_, &str, (&str, EmojiTeam<&str>)> {
+    let (input, _) = tag("Manager ").parse(input)?;
+    // Nobody submit the name "of the" please
+    let (input, manager_name) = parse_terminated(" of the ").parse(input)?;
+    let (input, emoji_team_str) = parse_terminated(" is making a pitching change.").parse(input)?;
+    let (_, emoji_team) = emoji_team_eof.parse(emoji_team_str)?;
+    Ok((input, (manager_name, emoji_team)))
+}
+
+fn parse_mound_visit_pitcher_swap<'parse, 'output: 'parse>(
     event: &'output Event,
     parsing_context: &'parse ParsingContext<'parse>,
-) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
+) -> impl MyParser<'output, (
+    (Option<&'output str>, PlacedPlayer<&'output str>),
+    (Option<&'output str>, (Option<Place>, &'output str)),
+)> + 'parse {
     let leaves_player = |i| {
         if parsing_context.before(Breakpoints::S2D152) {
             (terminated(try_from_word, tag(" ")), verify_name)
@@ -1293,45 +1330,55 @@ fn mound_visit<'parse, 'output: 'parse>(
         None => fail().parse(input),
     };
 
+    (
+        sentence((
+            opt(terminated(team_emoji, tag(" "))),
+            parse_terminated(" is leaving the game").and_then(placed_player_eof),
+        )),
+        sentence((
+            opt(terminated(team_emoji, tag(" "))),
+            parse_terminated(" takes the mound").and_then(leaves_player),
+        )),
+    )
+}
+
+fn mound_visit<'parse, 'output: 'parse>(
+    event: &'output Event,
+    parsing_context: &'parse ParsingContext<'parse>,
+) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
     let mound_visit_options = alt((
-        preceded(
-            tag("The "),
-            parse_terminated(" manager is making a mound visit.").and_then(emoji_team_eof),
-        )
-        .map(|team| ParsedEventMessage::MoundVisit {
+        parse_mound_visit_basic.map(|team| ParsedEventMessage::MoundVisit {
+            manager_name: None,
             team,
             mound_visit_type: MoundVisitType::MoundVisit,
         }),
-        preceded(
-            tag("The "),
-            parse_terminated(" manager is making a pitching change.").and_then(emoji_team_eof),
-        )
-        .map(|team| ParsedEventMessage::MoundVisit {
+        parse_mound_visit_basic_with_manager.map(|(manager_name, team)| ParsedEventMessage::MoundVisit {
+            manager_name: Some(manager_name),
+            team,
+            mound_visit_type: MoundVisitType::MoundVisit,
+        }),
+        parse_mound_visit_pitching_change.map(|team| ParsedEventMessage::MoundVisit {
+            manager_name: None,
             team,
             mound_visit_type: MoundVisitType::PitchingChange,
         }),
-        (
-            sentence((
-                opt(terminated(team_emoji, tag(" "))),
-                parse_terminated(" is leaving the game").and_then(placed_player_eof),
-            )),
-            sentence((
-                opt(terminated(team_emoji, tag(" "))),
-                parse_terminated(" takes the mound").and_then(leaves_player),
-            )),
-        )
-            .map(
-                |(
-                    (leaving_pitcher_emoji, leaving_pitcher),
-                    (arriving_pitcher_emoji, (arriving_pitcher_place, arriving_pitcher_name)),
-                )| ParsedEventMessage::PitcherSwap {
-                    leaving_pitcher_emoji,
-                    leaving_pitcher,
-                    arriving_pitcher_emoji,
-                    arriving_pitcher_place,
-                    arriving_pitcher_name,
-                },
-            ),
+        parse_mound_visit_pitching_change_with_manager.map(|(manager_name, team)| ParsedEventMessage::MoundVisit {
+            manager_name: Some(manager_name),
+            team,
+            mound_visit_type: MoundVisitType::PitchingChange,
+        }),
+        parse_mound_visit_pitcher_swap(event, parsing_context).map(
+            |(
+                (leaving_pitcher_emoji, leaving_pitcher),
+                (arriving_pitcher_emoji, (arriving_pitcher_place, arriving_pitcher_name)),
+            )| ParsedEventMessage::PitcherSwap {
+                leaving_pitcher_emoji,
+                leaving_pitcher,
+                arriving_pitcher_emoji,
+                arriving_pitcher_place,
+                arriving_pitcher_name,
+            },
+        ),
         sentence(parse_terminated(" remains in the game").and_then(placed_player_eof))
             .map(|remaining_pitcher| ParsedEventMessage::PitcherRemains { remaining_pitcher }),
     ));

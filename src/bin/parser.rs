@@ -718,10 +718,11 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             format!("number: {number}, side: {side}")
         }
         ParsedEventMessage::MoundVisit {
+            manager_name,
             team: _,
             mound_visit_type,
         } => {
-            format!("type: {}", mound_visit_type)
+            format!("manager_name: {}, type: {}", manager_name.is_some(), mound_visit_type)
         }
         ParsedEventMessage::PitcherRemains {
             remaining_pitcher: _,

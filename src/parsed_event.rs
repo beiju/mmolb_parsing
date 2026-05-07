@@ -96,6 +96,7 @@ pub enum ParsedEventMessage<S> {
 
     // Mound visits
     MoundVisit {
+        manager_name: Option<S>,
         team: EmojiTeam<S>,
         mound_visit_type: MoundVisitType,
     },
@@ -479,14 +480,19 @@ impl<S: Display> ParsedEventMessage<S> {
                 format!("End of the {side} of the {ordinal}.")
             }
             Self::MoundVisit {
+                manager_name,
                 team,
                 mound_visit_type,
-            } => match mound_visit_type {
-                MoundVisitType::MoundVisit => {
-                    format!("The {team} manager is making a mound visit.")
-                }
-                MoundVisitType::PitchingChange => {
-                    format!("The {team} manager is making a pitching change.")
+            } => {
+                let type_str = match mound_visit_type {
+                    MoundVisitType::MoundVisit => "mound visit",
+                    MoundVisitType::PitchingChange => "pitching change",
+                };
+
+                if let Some(manager_name) = manager_name {
+                    format!("Manager {manager_name} of the {team} is making a {type_str}.")
+                } else {
+                    format!("The {team} manager is making a {type_str}.")
                 }
             },
             Self::PitcherRemains { remaining_pitcher } => {
