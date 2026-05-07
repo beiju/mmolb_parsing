@@ -185,7 +185,7 @@ pub struct Team {
         skip_serializing_if = "AddedLaterResult::is_err"
     )]
     #[serde_as(as = "SometimesMissingHelper<_>")]
-    pub away_games: AddedLaterResult<u32>,
+    pub away_games: AddedLaterResult<Option<u32>>,
     #[serde(
         default = "SometimesMissingHelper::default_result",
         skip_serializing_if = "AddedLaterResult::is_err"
