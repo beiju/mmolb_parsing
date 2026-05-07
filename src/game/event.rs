@@ -1,12 +1,9 @@
+use crate::utils::SometimesMissingHelper;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
 use crate::utils::MaybeRecognizedHelper;
-use crate::{
-    enums::{EventType, Inning},
-    game::{EventBatterVersions, EventPitcherVersions, Pitch},
-    utils::{extra_fields_deserialize, MaybeRecognizedResult, NonStringOrEmptyString},
-};
+use crate::{enums::{EventType, Inning}, game::{EventBatterVersions, EventPitcherVersions, Pitch}, utils::{extra_fields_deserialize, MaybeRecognizedResult, NonStringOrEmptyString}, AddedLaterResult};
 
 #[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -19,6 +16,13 @@ pub(crate) struct RawEvent {
 
     pub away_score: u8,
     pub home_score: u8,
+
+    #[serde(
+        default = "SometimesMissingHelper::default_result",
+        skip_serializing_if = "Result::is_err"
+    )]
+    #[serde_as(as = "SometimesMissingHelper<_>")]
+    pub hype_active: AddedLaterResult<bool>,
 
     pub balls: Option<u8>,
     pub strikes: Option<u8>,
@@ -65,6 +69,8 @@ pub struct Event {
 
     pub away_score: u8,
     pub home_score: u8,
+
+    pub hype_active: AddedLaterResult<bool>,
 
     pub balls: Option<u8>,
     pub strikes: Option<u8>,
@@ -129,6 +135,7 @@ impl From<RawEvent> for Event {
             event: value.event,
             away_score: value.away_score,
             home_score: value.home_score,
+            hype_active: value.hype_active,
             balls: value.balls,
             strikes: value.strikes,
             outs: value.outs,
@@ -177,6 +184,7 @@ impl From<Event> for RawEvent {
             pitcher: value.pitcher,
             away_score: value.away_score,
             home_score: value.home_score,
+            hype_active: value.hype_active,
             balls: value.balls,
             strikes: value.strikes,
             outs: value.outs,
