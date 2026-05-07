@@ -687,8 +687,8 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             home_pitcher: _,
             away_pitcher: _,
         } => "".to_string(),
-        ParsedEventMessage::Lineup { side, players } => {
-            format!("Side: {side}, player_count: {}", players.len())
+        ParsedEventMessage::Lineup { side, manager_name, players } => {
+            format!("Side: {side}, manager_name: {}, player_count: {}", manager_name.is_some(), players.len())
         }
         ParsedEventMessage::PlayBall => "".to_string(),
         ParsedEventMessage::GameOver { message } => format!("Message: {message}"),

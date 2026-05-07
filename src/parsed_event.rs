@@ -63,6 +63,7 @@ pub enum ParsedEventMessage<S> {
     },
     Lineup {
         side: HomeAway,
+        manager_name: Option<S>,
         players: Vec<PlacedPlayer<S>>,
     },
     PlayBall,
@@ -374,14 +375,19 @@ impl<S: Display> ParsedEventMessage<S> {
                 home_pitcher,
                 away_pitcher,
             } => format!("{away_team} {away_pitcher} vs. {home_team} {home_pitcher}"),
-            Self::Lineup { side: _, players } => {
-                players
+            Self::Lineup { side: _, manager_name, players } => {
+                let players_str = players
                     .iter()
                     .enumerate()
                     .fold(String::new(), |mut acc, (index, player)| {
                         let _ = write!(acc, "{}. {player}<br>", index + 1);
                         acc
-                    })
+                    });
+                if let Some(manager_name) = manager_name {
+                    format!("Manager: {manager_name}<br>{players_str}")
+                } else {
+                    players_str
+                }
             }
             Self::PlayBall => "\"PLAY BALL.\"".to_string(),
             Self::GameOver { message } => message.to_string(),

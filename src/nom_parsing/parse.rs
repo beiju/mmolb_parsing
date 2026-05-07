@@ -31,10 +31,7 @@ use super::{
     },
     ParsingContext,
 };
-use crate::nom_parsing::shared::{
-    efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof,
-    parse_until_period_eof, wither,
-};
+use crate::nom_parsing::shared::{efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, wither, IResult};
 use crate::parsed_event::{ContainResult, PartyDurabilityLoss, WitherResult};
 use crate::{
     enums::{EventType, GameOverMessage, HomeAway, MoundVisitType, NowBattingStats},
@@ -1156,15 +1153,26 @@ fn pitching_matchup<'parse, 'output: 'parse>(
     )
 }
 
+fn lineup_manager(input: &str) -> IResult<'_, &str, &str> {
+    let (input, _) = tag("Manager: ").parse(input)?;
+    let (input, manager_name) = parse_terminated("<br>").parse(input)?;
+    Ok((input, manager_name))
+}
+
 fn lineup<'output>(side: HomeAway) -> impl MyParser<'output, ParsedEventMessage<&'output str>> {
     context(
         "Lineup",
-        all_consuming(many1(delimited(
-            (digit1, tag(". ")),
-            take_until("<br>").and_then(placed_player_eof),
-            tag("<br>"),
-        )))
-        .map(move |players| ParsedEventMessage::Lineup { side, players }),
+        all_consuming(move |input| {
+            let (input, manager_name) = opt(lineup_manager).parse(input)?;
+
+            let (input, players) = many1(delimited(
+                (digit1, tag(". ")),
+                take_until("<br>").and_then(placed_player_eof),
+                tag("<br>"),
+            )).parse(input)?;
+
+            Ok((input, ParsedEventMessage::Lineup { side, manager_name, players }))
+        })
     )
 }
 
