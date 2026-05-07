@@ -180,6 +180,10 @@ pub struct Team {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub fund: Option<i32>,
 
+    // This appears to have been `null` (rather than just missing)
+    // for newly created teams during the first half of Season 10.
+    // Whatever caused this seems to have been fixed during the
+    // Season 10 Superstar Break.
     #[serde(
         default = "SometimesMissingHelper::default_result",
         skip_serializing_if = "AddedLaterResult::is_err"
