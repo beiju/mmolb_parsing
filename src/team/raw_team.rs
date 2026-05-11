@@ -4,10 +4,9 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
 use super::team::TeamPlayer;
-use crate::enums::BenchRole;
 use crate::utils::{MaybeRecognizedHelper, SometimesMissingHelper};
 use crate::{
-    enums::{GameStat, PositionType, Slot},
+    enums::{GameStat, PositionType, BenchRole, FullSlot},
     utils::{
         extra_fields_deserialize, maybe_recognized_from_str, AddedLaterResult,
         MaybeRecognizedResult,
@@ -30,7 +29,7 @@ pub(crate) struct RawTeamPlayer {
         default = "SometimesMissingHelper::default_result",
         skip_serializing_if = "AddedLaterResult::is_err"
     )]
-    pub slot: AddedLaterResult<MaybeRecognizedResult<Slot>>,
+    pub slot: AddedLaterResult<MaybeRecognizedResult<FullSlot>>,
     #[serde_as(as = "SometimesMissingHelper<MaybeRecognizedHelper<_>>")]
     #[serde(
         default = "SometimesMissingHelper::default_result",

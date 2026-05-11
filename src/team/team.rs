@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
 use super::raw_team::RawTeamPlayer;
-use crate::enums::BenchRole;
+use crate::enums::{BenchRole, FullSlot};
 use crate::utils::{maybe_recognized_from_str, MaybeRecognizedHelper, SometimesMissingHelper};
 use crate::{
     enums::{BallparkSuffix, GameStat, Position, PositionType, RecordType, Slot},
@@ -229,7 +229,7 @@ pub struct TeamPlayer {
     pub position: Option<MaybeRecognizedResult<Position>>,
     pub(crate) actual_position: String,
 
-    pub slot: AddedLaterResult<MaybeRecognizedResult<Slot>>,
+    pub slot: AddedLaterResult<MaybeRecognizedResult<FullSlot>>,
 
     pub position_type: AddedLaterResult<MaybeRecognizedResult<PositionType>>,
 

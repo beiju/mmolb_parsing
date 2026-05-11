@@ -8,7 +8,6 @@ use nom::{
 };
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{DeserializeFromStr, SerializeDisplay};
-use std::fmt::Formatter;
 use std::{
     convert::Infallible,
     fmt::{Debug, Display},
@@ -1641,9 +1640,16 @@ pub enum BenchSlot {
 
 impl Display for BenchSlot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BenchSlot::Batter(num) => write!(f, "Bench Batter {}", num),
-            BenchSlot::Pitcher(num) => write!(f, "Bench Pitcher {}", num),
+        if f.alternate() {
+            match self {
+                BenchSlot::Batter(num) => write!(f, "Bench Batter {}", num),
+                BenchSlot::Pitcher(num) => write!(f, "Bench Pitcher {}", num),
+            }
+        } else {
+            match self {
+                BenchSlot::Batter(num) => write!(f, "B{}", num),
+                BenchSlot::Pitcher(num) => write!(f, "P{}", num),
+            }
         }
     }
 }
@@ -1656,6 +1662,10 @@ impl FromStr for BenchSlot {
             preceded(tag("Bench Batter "), u8::<&str, nom::error::Error<&str>>)
                 .map(BenchSlot::Batter),
             preceded(tag("Bench Pitcher "), u8::<&str, nom::error::Error<&str>>)
+                .map(BenchSlot::Pitcher),
+            preceded(tag("B"), u8::<&str, nom::error::Error<&str>>)
+                .map(BenchSlot::Batter),
+            preceded(tag("P"), u8::<&str, nom::error::Error<&str>>)
                 .map(BenchSlot::Pitcher),
         ))
         .parse(s)
@@ -1684,10 +1694,26 @@ impl Display for FullSlot {
     }
 }
 
+// Default Display is just the discriminant names; I'm not sure if there's a shorter
+// way to say "completely delegate Display"
+impl FromStr for FullSlot {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(slot) = s.parse::<BenchSlot>() {
+            Ok(FullSlot::Bench(slot))
+        } else if let Ok(slot) = s.parse::<Slot>() {
+            Ok(FullSlot::Active(slot))
+        } else {
+            Err("Player's full slot didn't match known bench or active slots")
+        }
+    }
+}
+
 pub struct WithNumberSign(pub BenchSlot);
 
 impl Display for WithNumberSign {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
             BenchSlot::Batter(num) => write!(f, "Bench Batter #{}", num),
             BenchSlot::Pitcher(num) => write!(f, "Bench Pitcher #{}", num),
