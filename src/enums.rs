@@ -1640,16 +1640,9 @@ pub enum BenchSlot {
 
 impl Display for BenchSlot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if f.alternate() {
-            match self {
-                BenchSlot::Batter(num) => write!(f, "Bench Batter {}", num),
-                BenchSlot::Pitcher(num) => write!(f, "Bench Pitcher {}", num),
-            }
-        } else {
-            match self {
-                BenchSlot::Batter(num) => write!(f, "B{}", num),
-                BenchSlot::Pitcher(num) => write!(f, "P{}", num),
-            }
+        match self {
+            BenchSlot::Batter(num) => write!(f, "B{}", num),
+            BenchSlot::Pitcher(num) => write!(f, "P{}", num),
         }
     }
 }
@@ -1659,10 +1652,6 @@ impl FromStr for BenchSlot {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         alt((
-            preceded(tag("Bench Batter "), u8::<&str, nom::error::Error<&str>>)
-                .map(BenchSlot::Batter),
-            preceded(tag("Bench Pitcher "), u8::<&str, nom::error::Error<&str>>)
-                .map(BenchSlot::Pitcher),
             preceded(tag("B"), u8::<&str, nom::error::Error<&str>>)
                 .map(BenchSlot::Batter),
             preceded(tag("P"), u8::<&str, nom::error::Error<&str>>)
@@ -1675,12 +1664,72 @@ impl FromStr for BenchSlot {
 }
 
 #[derive(
+    Debug,
+    Clone,
+    Copy,
+    EnumIter,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumDiscriminants,
+    SerializeDisplay,
+    DeserializeFromStr,
+)]
+pub enum BenchSlotLabel {
+    Batter(u8),
+    Pitcher(u8),
+}
+
+impl Display for BenchSlotLabel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BenchSlotLabel::Batter(num) => write!(f, "Bench Batter {}", num),
+            BenchSlotLabel::Pitcher(num) => write!(f, "Bench Pitcher {}", num),
+        }
+    }
+}
+
+impl FromStr for BenchSlotLabel {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        alt((
+            preceded(tag("Bench Batter "), u8::<&str, nom::error::Error<&str>>)
+                .map(BenchSlotLabel::Batter),
+            preceded(tag("Bench Pitcher "), u8::<&str, nom::error::Error<&str>>)
+                .map(BenchSlotLabel::Pitcher),
+        ))
+        .parse(s)
+        .map(|(_, o)| o)
+        .map_err(|_| "Player's bench slot label didn't match known bench slot labels")
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    EnumString,
+    IntoStaticStr,
+    Display,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumIter,
+)]
+pub enum SlotType {
+    Bench,
+    Roster,
+}
+
+#[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, EnumDiscriminants, SerializeDisplay, Deserialize,
 )]
 #[serde(untagged)]
 pub enum FullSlot {
     Bench(BenchSlot),
-    Active(Slot),
+    Roster(Slot),
 }
 
 // Default Display is just the discriminant names; I'm not sure if there's a shorter
@@ -1689,7 +1738,7 @@ impl Display for FullSlot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FullSlot::Bench(slot) => write!(f, "{}", slot),
-            FullSlot::Active(slot) => write!(f, "{}", slot),
+            FullSlot::Roster(slot) => write!(f, "{}", slot),
         }
     }
 }
@@ -1703,9 +1752,45 @@ impl FromStr for FullSlot {
         if let Ok(slot) = s.parse::<BenchSlot>() {
             Ok(FullSlot::Bench(slot))
         } else if let Ok(slot) = s.parse::<Slot>() {
-            Ok(FullSlot::Active(slot))
+            Ok(FullSlot::Roster(slot))
         } else {
             Err("Player's full slot didn't match known bench or active slots")
+        }
+    }
+}
+
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, EnumDiscriminants, SerializeDisplay, Deserialize,
+)]
+#[serde(untagged)]
+pub enum FullSlotLabel {
+    Bench(BenchSlotLabel),
+    Active(Slot), // TODO
+}
+
+// Default Display is just the discriminant names; I'm not sure if there's a shorter
+// way to say "completely delegate Display"
+impl Display for FullSlotLabel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FullSlotLabel::Bench(slot) => write!(f, "{}", slot),
+            FullSlotLabel::Active(slot) => write!(f, "{}", slot),
+        }
+    }
+}
+
+// Default Display is just the discriminant names; I'm not sure if there's a shorter
+// way to say "completely delegate Display"
+impl FromStr for FullSlotLabel {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(slot) = s.parse::<BenchSlotLabel>() {
+            Ok(FullSlotLabel::Bench(slot))
+        } else if let Ok(slot) = s.parse::<Slot>() {
+            Ok(FullSlotLabel::Active(slot))
+        } else {
+            Err("Player's full slot label didn't match known bench or active slot labels")
         }
     }
 }

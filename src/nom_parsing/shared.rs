@@ -1457,7 +1457,7 @@ pub(super) fn active_slot(input: &str) -> IResult<'_, &str, Slot> {
 fn full_slot(input: &str) -> IResult<'_, &str, FullSlot> {
     alt((
         bench_slot.map(FullSlot::Bench),
-        active_slot.map(FullSlot::Active),
+        active_slot.map(FullSlot::Roster),
     ))
     .parse(input)
 }
@@ -1886,6 +1886,7 @@ pub fn emoji_food(input: &str) -> IResult<'_, &str, EmojiFood<&str>> {
     Ok((input, EmojiFood { food_emoji, food }))
 }
 
+#[allow(unused)]
 pub(super) fn team_emoji_player_eof<'parse, 'output>(
     side: HomeAway,
     parsing_context: &'parse ParsingContext<'parse>,

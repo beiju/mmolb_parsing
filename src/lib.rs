@@ -66,6 +66,7 @@ impl<'a> UnparsingContext<'a> {
     }
 
     /// Whether this event is after the given time
+    #[allow(unused)]
     pub(crate) fn after(&self, event_index: Option<u16>, time: impl Into<Time>) -> bool {
         time.into().after(self.season, self.day, event_index)
     }
