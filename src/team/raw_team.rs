@@ -84,9 +84,27 @@ pub(crate) struct RawTeamPlayer {
     #[serde_as(as = "SometimesMissingHelper<_>")]
     pub food_buffs: AddedLaterResult<Vec<FoodBuff>>,
 
-    pub greater_boon: BoonCollection,
-    pub lesser_boon: BoonCollection,
-    pub modifications: Vec<Modification>,
+
+    #[serde(
+        default = "SometimesMissingHelper::default_result",
+        skip_serializing_if = "AddedLaterResult::is_err"
+    )]
+    #[serde_as(as = "SometimesMissingHelper<_>")]
+    pub greater_boon: AddedLaterResult<BoonCollection>,
+
+    #[serde(
+        default = "SometimesMissingHelper::default_result",
+        skip_serializing_if = "AddedLaterResult::is_err"
+    )]
+    #[serde_as(as = "SometimesMissingHelper<_>")]
+    pub lesser_boon: AddedLaterResult<BoonCollection>,
+
+    #[serde(
+        default = "SometimesMissingHelper::default_result",
+        skip_serializing_if = "AddedLaterResult::is_err"
+    )]
+    #[serde_as(as = "SometimesMissingHelper<_>")]
+    pub modifications: AddedLaterResult<Vec<Modification>>,
 
     #[serde(
         default = "SometimesMissingHelper::default_result",

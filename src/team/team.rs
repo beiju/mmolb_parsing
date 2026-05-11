@@ -291,9 +291,9 @@ pub struct TeamPlayer {
 
     pub food_buffs: AddedLaterResult<Vec<FoodBuff>>,
 
-    pub greater_boon: BoonCollection,
-    pub lesser_boon: BoonCollection,
-    pub modifications: Vec<Modification>,
+    pub greater_boon: AddedLaterResult<BoonCollection>,
+    pub lesser_boon: AddedLaterResult<BoonCollection>,
+    pub modifications: AddedLaterResult<Vec<Modification>>,
 
     pub level: AddedLaterResult<u32>,
     pub pending_level_ups: AddedLaterResult<Vec<PendingLevelUp>>,
