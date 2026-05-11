@@ -286,6 +286,7 @@ pub enum ParsedEventMessage<S> {
     },
     Balk {
         pitcher: S,
+        balk_reason: S,
         scores: Vec<S>,
         advances: Vec<RunnerAdvance<S>>,
     },
@@ -1011,24 +1012,12 @@ impl<S: Display> ParsedEventMessage<S> {
             }
             Self::Balk {
                 pitcher,
+                balk_reason,
                 scores,
                 advances,
             } => {
                 let scores_and_advances = unparse_scores_and_advances(scores, advances);
-                let balk_msg = if Breakpoints::Season11.after(
-                    context.season,
-                    context.day,
-                    event_index,
-                ) && Breakpoints::Season11BalkMessageFix.before(
-                    context.season,
-                    context.day,
-                    event_index,
-                ) {
-                    "dropped the ball.."
-                } else {
-                    "dropped the ball."
-                };
-                format!("Balk. {pitcher} {balk_msg}{scores_and_advances}")
+                format!("Balk. {pitcher} {balk_reason}.{scores_and_advances}")
             }
             Self::KnownBug { bug } => format!("{bug}"),
             Self::WeatherProsperity {

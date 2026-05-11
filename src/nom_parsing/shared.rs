@@ -37,6 +37,7 @@ use crate::{
     time::{Breakpoints, Time},
     Game,
 };
+use crate::game::EventPitcherVersions;
 
 pub(crate) type Error<'a> = VerboseError<&'a str>;
 pub(crate) type IResult<'a, I, O> = nom::IResult<I, O, Error<'a>>;
@@ -59,6 +60,7 @@ pub struct ParsingContext<'parse> {
     pub away_emoji_team: EmojiTeam<&'parse str>,
     pub season: u32,
     pub day: Option<Day>,
+    pub pitcher_name: Option<&'parse str>,
 }
 impl<'parse> ParsingContext<'parse> {
     pub fn new(game_id: &'parse str, game: &'parse Game, event_index: Option<u16>) -> Self {
@@ -76,6 +78,18 @@ impl<'parse> ParsingContext<'parse> {
             },
             season: game.season,
             day: game.day.as_ref().copied().ok(),
+            pitcher_name: event_index.and_then(|event_index| {
+                game.event_log.get(event_index as usize).and_then(|event| {
+                    match &event.pitcher {
+                        EventPitcherVersions::New(pitcher) => {
+                            pitcher.name.map_as_str().player()
+                        }
+                        EventPitcherVersions::Old(pitcher) => {
+                            pitcher.map_as_str().player()
+                        }
+                    }
+                })
+            }),
         }
     }
 
@@ -1999,6 +2013,7 @@ mod test {
                 },
                 season: 3,
                 day: Some(Day::Day(166)),
+                pitcher_name: None,
             },
             "Special Delivery",
         );

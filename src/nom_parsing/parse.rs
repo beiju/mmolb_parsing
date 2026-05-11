@@ -306,24 +306,41 @@ fn party<'parse, 'output: 'parse>(
 
 fn balk<'parse, 'output: 'parse>(
     parsing_context: &'parse ParsingContext<'parse>,
-) -> impl MyParser<'output, ParsedEventMessage<&'output str>> {
-    let msg_parser = if parsing_context.after(Breakpoints::Season11) && parsing_context.before(Breakpoints::Season11BalkMessageFix) {
-        parse_terminated(" dropped the ball..")
-    } else {
-        parse_terminated(" dropped the ball.")
-    };
+) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
     context(
         "Balk",
-        all_consuming((
-            preceded(tag("Balk. "), msg_parser),
-            scores_and_advances,
-        )),
+        move |input: &'output str| {
+            let Some(pitcher) = parsing_context.pitcher_name else {
+                return fail().parse(input);
+            };
+
+            let (input, _) = tag("Balk. ").parse(input)?;
+            // Re-bind `pitcher` to get an instance of it with the right lifetime
+            let (input, pitcher) = tag(pitcher).parse(input)?;
+            let (input, _) = tag(" ").parse(input)?;
+            let (input, (balk_reason, (scores, advances))) = if parsing_context.after(Breakpoints::Season11) && parsing_context.before(Breakpoints::Season11BalkMessageFix) {
+                let (input, balk_reason) = tag("dropped the ball..").parse(input)?;
+                let (input, scores_advances) = scores_and_advances.parse(input)?;
+                // Need to chop off the last period. We know the length of the string will always be the same.
+                (input, (&balk_reason[..17], scores_advances))
+            } else {
+                // This is semi-robust to balk messages with periods, but it can still be tripped
+                // up by something like "was distracted by Mr. Peanut. A. Player to second base."
+                // Without knowledge of either what the balk messages are (would require constant
+                // manual updates) or what the baserunner names are (doable but not implemented yet)
+                // it's impossible to parse that correctly in the general case.
+                all_consuming_sentence_and(rest, scores_and_advances).parse(input)?
+            };
+
+
+            Ok((input, ParsedEventMessage::Balk {
+                pitcher,
+                balk_reason,
+                scores,
+                advances,
+            }))
+        },
     )
-    .map(|(pitcher, (scores, advances))| ParsedEventMessage::Balk {
-        pitcher,
-        scores,
-        advances,
-    })
 }
 
 fn special_delivery<'parse, 'output: 'parse>(
@@ -1860,6 +1877,7 @@ mod test {
             },
             season: 5,
             day: None,
+            pitcher_name: None,
         };
 
         assert_eq!(
@@ -1916,6 +1934,7 @@ mod test {
             },
             season: 5,
             day: None,
+            pitcher_name: None,
         };
 
         assert_eq!(
@@ -1959,6 +1978,7 @@ mod test {
             },
             season: 5,
             day: None,
+            pitcher_name: None,
         };
 
         assert_eq!(
@@ -2008,6 +2028,7 @@ mod test {
             },
             season: 9,
             day: Some(Day::Day(0)),
+            pitcher_name: None,
         };
         super::weather_consumption_consumes(&context)
             .parse(text)
@@ -2032,6 +2053,7 @@ mod test {
             },
             season: 9,
             day: Some(Day::Day(0)),
+            pitcher_name: None,
         };
         super::weather_consumption_consumes(&context)
             .parse(text)
@@ -2056,6 +2078,7 @@ mod test {
             },
             season: 9,
             day: Some(Day::Day(106)),
+            pitcher_name: None,
         };
         let (_, event) = super::field(&parsing_context).parse(text).unwrap();
 

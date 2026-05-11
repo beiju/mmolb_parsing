@@ -978,6 +978,7 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
         ParsedEventMessage::WeatherSpecialDelivery { delivery: _ } => "".to_string(),
         ParsedEventMessage::Balk {
             pitcher: _,
+            balk_reason: _,
             scores,
             advances,
         } => {
