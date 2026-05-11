@@ -197,6 +197,13 @@ pub struct Team {
     #[serde_as(as = "SometimesMissingHelper<_>")]
     pub bench: AddedLaterResult<Bench>,
 
+    #[serde(
+        default = "SometimesMissingHelper::default_result",
+        skip_serializing_if = "Result::is_err"
+    )]
+    #[serde_as(as = "SometimesMissingHelper<_>")]
+    pub manager_name: AddedLaterResult<String>,
+
     #[serde(flatten, deserialize_with = "extra_fields_deserialize")]
     pub extra_fields: serde_json::Map<String, serde_json::Value>,
 }
