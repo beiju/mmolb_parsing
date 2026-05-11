@@ -1765,7 +1765,7 @@ impl FromStr for FullSlot {
 #[serde(untagged)]
 pub enum FullSlotLabel {
     Bench(BenchSlotLabel),
-    Active(Slot), // TODO
+    Roster(Slot), // TODO
 }
 
 // Default Display is just the discriminant names; I'm not sure if there's a shorter
@@ -1774,7 +1774,7 @@ impl Display for FullSlotLabel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FullSlotLabel::Bench(slot) => write!(f, "{}", slot),
-            FullSlotLabel::Active(slot) => write!(f, "{}", slot),
+            FullSlotLabel::Roster(slot) => write!(f, "{}", slot),
         }
     }
 }
@@ -1788,7 +1788,7 @@ impl FromStr for FullSlotLabel {
         if let Ok(slot) = s.parse::<BenchSlotLabel>() {
             Ok(FullSlotLabel::Bench(slot))
         } else if let Ok(slot) = s.parse::<Slot>() {
-            Ok(FullSlotLabel::Active(slot))
+            Ok(FullSlotLabel::Roster(slot))
         } else {
             Err("Player's full slot label didn't match known bench or active slot labels")
         }

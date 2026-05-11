@@ -418,6 +418,9 @@ pub struct PendingLevelUp {
     #[serde_as(as = "Option<TimestampHelper>")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub earned_at: Option<DateTime<Utc>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub options: Option<Vec<LevelUpChoice>>,
 }
 
 /// A player's equipment field can be described by `HashMap<Result<EquipmentSlot, NotRecognized>, Option<PlayerEquipment>>`

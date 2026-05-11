@@ -224,15 +224,19 @@ pub struct Team {
         default = "SometimesMissingHelper::default_result",
         skip_serializing_if = "Result::is_err"
     )]
-    #[serde_as(as = "SometimesMissingHelper<TimestampHelper>")]
-    pub last_roster_swap_at: AddedLaterResult<DateTime<Utc>>,
+    #[serde_as(as = "SometimesMissingHelper<Option<TimestampHelper>>")]
+    pub last_roster_swap_at: AddedLaterResult<Option<DateTime<Utc>>>,
 
+    // Err(_) => key does not exist
+    // Ok(None) => key exists with value `null`
+    // Ok(Some(Err())) => key exists with unrecognized value
+    // Ok(Some(Ok())) => key exists with recognized value
     #[serde(
         default = "SometimesMissingHelper::default_result",
         skip_serializing_if = "Result::is_err"
     )]
-    #[serde_as(as = "SometimesMissingHelper<MaybeRecognizedHelper<_>>")]
-    pub lineup_priority: AddedLaterResult<MaybeRecognizedResult<Attribute>>,
+    #[serde_as(as = "SometimesMissingHelper<Option<MaybeRecognizedHelper<_>>>")]
+    pub lineup_priority: AddedLaterResult<Option<MaybeRecognizedResult<Attribute>>>,
 
     #[serde(
         default = "SometimesMissingHelper::default_result",

@@ -16,7 +16,7 @@ use nom_language::error::VerboseError;
 use std::fmt::{Display, Formatter};
 use std::{fmt::Debug, str::FromStr};
 use strum::IntoEnumIterator;
-use crate::enums::{Attribute, BenchSlot, CelestialEnergyTier, FoodName, FullSlot, ModificationType, Slot};
+use crate::enums::{Attribute, BenchSlot, BenchSlotLabel, CelestialEnergyTier, FoodName, FullSlotLabel, ModificationType, Slot};
 use crate::feed_event::FeedFallingStarOutcome;
 use crate::parsed_event::{
     Efflorescence, EfflorescenceOutcome, EjectionReplacement, EmojiFood, EmojiPlayer, ItemEquip,
@@ -1426,10 +1426,10 @@ pub(super) fn and_item(input: &str) -> IResult<'_, &str, Item<&str>> {
     Ok((input, item))
 }
 
-fn bench_slot(input: &str) -> IResult<'_, &str, BenchSlot> {
+fn bench_slot_label(input: &str) -> IResult<'_, &str, BenchSlotLabel> {
     alt((
-        preceded(tag("Bench Batter "), u8).map(BenchSlot::Batter),
-        preceded(tag("Bench Pitcher "), u8).map(BenchSlot::Pitcher),
+        preceded(tag("Bench Batter "), u8).map(BenchSlotLabel::Batter),
+        preceded(tag("Bench Pitcher "), u8).map(BenchSlotLabel::Pitcher),
     ))
     .parse(input)
 }
@@ -1454,10 +1454,10 @@ pub(super) fn active_slot(input: &str) -> IResult<'_, &str, Slot> {
     .parse(input)
 }
 
-fn full_slot(input: &str) -> IResult<'_, &str, FullSlot> {
+fn full_slot_label(input: &str) -> IResult<'_, &str, FullSlotLabel> {
     alt((
-        bench_slot.map(FullSlot::Bench),
-        active_slot.map(FullSlot::Roster),
+        bench_slot_label.map(FullSlotLabel::Bench),
+        active_slot.map(FullSlotLabel::Roster),
     ))
     .parse(input)
 }
@@ -1481,9 +1481,9 @@ pub fn training(input: &str) -> IResult<'_, &str, BenchSlot> {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct PositionSwap<S> {
     first_player_name: S,
-    first_player_new_slot: FullSlot,
+    first_player_new_slot: FullSlotLabel,
     second_player_name: S,
-    second_player_new_slot: FullSlot,
+    second_player_new_slot: FullSlotLabel,
 }
 
 impl<S: Display> Display for PositionSwap<S> {
@@ -1510,10 +1510,10 @@ pub(super) fn player_positions_swapped(input: &str) -> IResult<'_, &str, Positio
     // of names as a single unit here and then verify it after.
     let (input, anded_names) = parse_terminated(" swapped positions: ").parse(input)?;
     let (input, first_player_name) = parse_terminated(" moved to ").parse(input)?;
-    let (input, first_player_new_slot) = full_slot.parse(input)?;
+    let (input, first_player_new_slot) = full_slot_label.parse(input)?;
     let (input, _) = tag(", ").parse(input)?;
     let (input, second_player_name) = parse_terminated(" moved to ").parse(input)?;
-    let (input, second_player_new_slot) = full_slot.parse(input)?;
+    let (input, second_player_new_slot) = full_slot_label.parse(input)?;
     let (input, _) = tag(".").parse(input)?;
 
     // Verify that anded_names matches what's expected
