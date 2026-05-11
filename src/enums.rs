@@ -2469,6 +2469,9 @@ pub enum ModificationType {
     Granite,
     Satellite,
     Loyal,
+    Peacebroker,
+    Ambassador,
+    Disguised,
 
     #[strum(default)]
     #[serde(untagged)]
