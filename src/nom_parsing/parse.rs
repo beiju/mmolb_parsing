@@ -5,7 +5,6 @@ use crate::{
         strike_out_text, successful_ejection_tail,
     },
     parsed_event::{EmojiPlayer, WeatherConsumptionEvents},
-    time::is_superstar_game,
 };
 use nom::{
     branch::alt,
