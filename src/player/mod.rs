@@ -396,7 +396,8 @@ pub struct AppliedLevelUp {
 #[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ScheduledLevelUp {
-    pub id: Uuid,
+    // Often, but not always, a UUID
+    pub id: String,
     pub level: u32,
     pub choice: LevelUpChoice,
     #[serde_as(as = "Option<TimestampHelper>")]
