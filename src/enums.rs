@@ -1478,6 +1478,7 @@ pub enum RecordType {
     PostseasonRound(u8),
     SuperstarGame,
     HomeRunChallenge,
+    Offseason,
 }
 impl FromStr for RecordType {
     type Err = &'static str;
@@ -1487,6 +1488,7 @@ impl FromStr for RecordType {
             "Superstar Game" => Ok(RecordType::SuperstarGame),
             "Kumite" => Ok(RecordType::Kumite),
             "Home Run Challenge" => Ok(RecordType::HomeRunChallenge),
+            "Offseason" => Ok(RecordType::Offseason),
             s => s
                 .strip_prefix("Postseason Round ")
                 .and_then(|s| s.parse().ok())
@@ -1505,6 +1507,7 @@ impl Display for RecordType {
             RecordType::Kumite => write!(f, "Kumite"),
             RecordType::SuperstarGame => write!(f, "Superstar Game"),
             RecordType::HomeRunChallenge => write!(f, "Home Run Challenge"),
+            RecordType::Offseason => write!(f, "Offseason"),
         }
     }
 }

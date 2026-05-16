@@ -413,7 +413,8 @@ pub struct ScheduledLevelUp {
 #[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PendingLevelUp {
-    pub id: Uuid,
+    // Often, but not always, a UUID
+    pub id: String,
     pub level: u32,
     #[serde_as(as = "Option<TimestampHelper>")]
     #[serde(skip_serializing_if = "Option::is_none")]
