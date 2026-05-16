@@ -1248,42 +1248,22 @@ fn inning_start<'parse, 'output: 'parse>(
 
         let automatic_runner = sentence(parse_terminated(" starts the inning on second base"));
 
-        let mut pitcher_status = alt((keep_pitcher, swap_pitcher));
+        let pitcher_status = alt((keep_pitcher, swap_pitcher));
 
-        if is_superstar_game(parsing_context.day)
-            || parsing_context.home_emoji_team.name == "Simulacra I"
-            || parsing_context.away_emoji_team.name == "Simulacra I"
-        {
-            let (input, (side, number, batting_team)) = start_inning.parse(input)?;
-            let (input, automatic_runner) = opt(automatic_runner).parse(input)?;
-            let (input, pitcher_status) = opt(pitcher_status).parse(input)?;
+        let (input, (side, number, batting_team)) = start_inning.parse(input)?;
+        let (input, automatic_runner) = opt(automatic_runner).parse(input)?;
+        let (input, pitcher_status) = opt(pitcher_status).parse(input)?;
 
-            Ok((
-                input,
-                ParsedEventMessage::InningStart {
-                    number,
-                    side,
-                    batting_team,
-                    automatic_runner,
-                    pitcher_status,
-                },
-            ))
-        } else {
-            let (input, (side, number, batting_team)) = start_inning.parse(input)?;
-            let (input, automatic_runner) = opt(automatic_runner).parse(input)?;
-            let (input, pitcher_status) = pitcher_status.parse(input)?;
-
-            Ok((
-                input,
-                ParsedEventMessage::InningStart {
-                    number,
-                    side,
-                    batting_team,
-                    automatic_runner,
-                    pitcher_status: Some(pitcher_status),
-                },
-            ))
-        }
+        Ok((
+            input,
+            ParsedEventMessage::InningStart {
+                number,
+                side,
+                batting_team,
+                automatic_runner,
+                pitcher_status,
+            },
+        ))
     };
 
     context("Inning Start", all_consuming(parser))
