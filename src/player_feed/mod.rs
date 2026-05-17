@@ -213,6 +213,11 @@ pub enum ParsedPlayerFeedEventText<S> {
     ResumedHolidayProcessingReplacement {
         replaced_player_name: S,
         replacement_player_name: S,
+    },
+    GainedModificationFromGreaterAugment {
+        player_name: S,
+        modification: ModificationType,
+        augment_name: S,
     }
 }
 
@@ -398,6 +403,9 @@ impl<S: Display> ParsedPlayerFeedEventText<S> {
             },
             ParsedPlayerFeedEventText::ResumedHolidayProcessingReplacement { replaced_player_name, replacement_player_name } => {
                 format!("Resumed Holiday processing: {replaced_player_name} was replaced by {replacement_player_name}.")
+            },
+            ParsedPlayerFeedEventText::GainedModificationFromGreaterAugment { player_name, modification, augment_name } => {
+                format!("{player_name} gained {modification} via {augment_name}.")
             }
         }
     }

@@ -2475,6 +2475,15 @@ pub enum ModificationType {
     Peacebroker,
     Ambassador,
     Disguised,
+    #[strum(to_string = "Sweet Tooth")]
+    #[serde(rename = "Sweet Tooth")]
+    SweetTooth,
+    Jetpack,
+    Caltrops,
+    #[strum(to_string = "Surprise Strike")]
+    #[serde(rename = "Surprise Strike")]
+    SurpriseStrike,
+    Assassin,
 
     #[strum(default)]
     #[serde(untagged)]

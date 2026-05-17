@@ -1944,6 +1944,16 @@ pub(super) fn feed_event_resumed_processing(input: &str) -> IResult<'_, &str, (&
     Ok((input, (replaced_player_name, replacement_player_name)))
 }
 
+pub(super) fn player_greater_augment_mod(
+    input: &str,
+) -> IResult<'_, &str, (&str, ModificationType, &str)> {
+    let (input, player_name) = parse_terminated(" gained ").parse(input)?;
+    let (input, modification) = parse_terminated(" via ").map(ModificationType::new).parse(input)?;
+    let (input, augment_name) = parse_until_period_eof.parse(input)?;
+
+    Ok((input, (player_name, modification, augment_name)))
+}
+
 #[cfg(test)]
 mod test {
     use crate::{

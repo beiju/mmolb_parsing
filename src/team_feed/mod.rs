@@ -264,7 +264,12 @@ pub enum ParsedTeamFeedEventText<S> {
         position_type: PositionType,
         player_name: S,
         player_level: u32,
-    }
+    },
+    GainedModificationFromGreaterAugment {
+        player_name: S,
+        modification: ModificationType,
+        augment_name: S,
+    } 
 }
 
 impl<S: Display> ParsedTeamFeedEventText<S> {
@@ -513,6 +518,9 @@ impl<S: Display> ParsedTeamFeedEventText<S> {
             }
             ParsedTeamFeedEventText::GoldenPlayerEmerged { position_type, player_name, player_level } => {
                 format!("{player_name} emerged as a Level {player_level} Golden {position_type}.")
+            }
+            ParsedTeamFeedEventText::GainedModificationFromGreaterAugment { player_name, modification, augment_name } => {
+                format!("{player_name} gained {modification} via {augment_name}.")
             }
         }
     }
