@@ -340,8 +340,12 @@ fn ingest<T: for<'a> Deserialize<'a> + Serialize>(
         Option<&mut HashSet<String>>,
     ) -> EnteredSpan,
 ) {
-    let _ingest_guard =
-        tracing::span!(Level::INFO, "Entity Ingest", entity_id = response.entity_id).entered();
+    let _ingest_guard = tracing::span!(
+        Level::INFO,
+        "Entity Ingest",
+        entity_id = response.entity_id,
+        valid_from = response.valid_from,
+    ).entered();
 
     let entity: T = if !args.no_path_to_error {
         let des = response.data.as_ref().into_deserializer();
@@ -387,7 +391,11 @@ fn player_inner(
     let _player_span_guard = tracing::span!(
         Level::INFO,
         "Player",
-        name = format!("{} {}", player.first_name, player.last_name)
+        name = if let Ok(Some(suffix)) = &player.suffix {
+            format!("{} {} {suffix}", player.first_name, player.last_name)
+        } else {
+            format!("{} {}", player.first_name, player.last_name)
+        }
     )
     .entered();
     let mut output = args

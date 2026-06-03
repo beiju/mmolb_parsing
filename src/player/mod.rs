@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use chrono::{DateTime, Utc};
 use strum::{Display, EnumIter, EnumString, IntoStaticStr};
 use uuid::Uuid;
-use crate::enums::{AttributeCategory, PitchCategory, PitchType};
+use crate::enums::{AttributeCategory, ImplicitEquipmentEffectSource, PitchCategory, PitchType};
 use crate::utils::{extra_fields_deserialize, MaybeRecognizedHelper, SometimesMissingHelper, TimestampHelper};
 use crate::{
     enums::{
@@ -259,6 +259,9 @@ pub struct Player {
     #[serde_as(as = "SometimesMissingHelper<HashMap<MaybeRecognizedHelper<_>, _>>")]
     pub pitch_category_bonuses:
         AddedLaterResult<HashMap<MaybeRecognizedResult<PitchCategory>, f64>>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub free_recomp: Option<bool>,
 
     #[serde(flatten, deserialize_with = "extra_fields_deserialize")]
     pub extra_fields: serde_json::Map<String, serde_json::Value>,
@@ -528,6 +531,10 @@ pub struct PlayerEquipment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[serde_as(as = "Option<Vec<MaybeRecognizedHelper<_>>>")]
     pub effects: Option<Vec<MaybeRecognizedResult<EquipmentEffect>>>,
+    // Used for corrupted modifiers
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<_>")]
+    pub implicit: Option<ImplicitEquipmentEffect>,
     pub emoji: String,
     /// Removed in the current version of the API
     #[serde(
@@ -568,6 +575,12 @@ pub struct PlayerEquipment {
     )]
     #[serde_as(as = "SometimesMissingHelper<_>")]
     pub specialized: AddedLaterResult<bool>,
+    #[serde(
+        default = "SometimesMissingHelper::default_result",
+        skip_serializing_if = "AddedLaterResult::is_err"
+    )]
+    #[serde_as(as = "SometimesMissingHelper<_>")]
+    pub corrupted: AddedLaterResult<bool>,
 
     /// Only exists on deleted player's equipment. Was replaced with the "prefixes" field once multi-prefix items
     /// were added.
@@ -628,6 +641,20 @@ pub struct EquipmentEffect {
     )]
     #[serde_as(as = "SometimesMissingHelper<_>")]
     pub tier: AddedLaterResult<u32>,
+
+    #[serde(flatten, deserialize_with = "extra_fields_deserialize")]
+    pub extra_fields: serde_json::Map<String, serde_json::Value>,
+}
+
+#[serde_as]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "PascalCase")]
+pub struct ImplicitEquipmentEffect {
+    #[serde_as(as = "MaybeRecognizedHelper<_>")]
+    pub source: MaybeRecognizedResult<ImplicitEquipmentEffectSource>,
+
+    #[serde_as(as = "Vec<MaybeRecognizedHelper<_>>")]
+    pub effects: Vec<MaybeRecognizedResult<EquipmentEffect>>,
 
     #[serde(flatten, deserialize_with = "extra_fields_deserialize")]
     pub extra_fields: serde_json::Map<String, serde_json::Value>,
@@ -708,9 +735,15 @@ pub enum TalkStars {
     Simple(#[serde_as(as = "StarHelper")] u8),
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ComplexTalkStars {
-    pub attribute: Attribute,
+    #[serde(
+        default = "SometimesMissingHelper::default_result",
+        skip_serializing_if = "AddedLaterResult::is_err"
+    )]
+    #[serde_as(as = "SometimesMissingHelper<_>")]
+    pub attribute: AddedLaterResult<Attribute>,
     pub display: String,
     pub regular: u8,
     pub shiny: u8,

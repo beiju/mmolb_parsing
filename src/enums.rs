@@ -2717,6 +2717,26 @@ impl From<PitchType> for PitchCategory {
     }
 }
 
+#[derive(
+    Clone,
+    Copy,
+    EnumString,
+    IntoStaticStr,
+    Display,
+    Debug,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumIter,
+)]
+pub enum ImplicitEquipmentEffectSource {
+    #[strum(to_string = "Corrupting Orb")]
+    #[serde(rename = "Corrupting Orb")]
+    CorruptingOrb,
+}
+
 #[cfg(test)]
 mod test {
     use std::fmt::Debug;
