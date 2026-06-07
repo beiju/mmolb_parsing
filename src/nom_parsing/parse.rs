@@ -323,12 +323,16 @@ fn balk<'parse, 'output: 'parse>(
                 // Need to chop off the last period. We know the length of the string will always be the same.
                 (input, (&balk_reason[..17], scores_advances))
             } else {
-                // This is semi-robust to balk messages with periods, but it can still be tripped
-                // up by something like "was distracted by Mr. Peanut. A. Player to second base."
-                // Without knowledge of either what the balk messages are (would require constant
-                // manual updates) or what the baserunner names are (doable but not implemented yet)
-                // it's impossible to parse that correctly in the general case.
-                all_consuming_sentence_and(rest, scores_and_advances).parse(input)?
+                alt((
+                    // Has to be hard-coded because all_consuming_sentence_and has no chance
+                    pair(tag("hit a sick 720. Where did they get a skateboard.."), preceded(tag("."), scores_and_advances)),
+                    // This is semi-robust to balk messages with periods, but it can still be tripped
+                    // up by something like "was distracted by Mr. Peanut. A. Player to second base."
+                    // Without knowledge of either what the balk messages are (would require constant
+                    // manual updates) or what the baserunner names are (doable but not implemented yet)
+                    // it's impossible to parse that correctly in the general case.
+                    all_consuming_sentence_and(rest, scores_and_advances)
+                )).parse(input)?
             };
 
 
