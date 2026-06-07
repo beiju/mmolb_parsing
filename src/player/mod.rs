@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use chrono::{DateTime, Utc};
 use strum::{Display, EnumIter, EnumString, IntoStaticStr};
 use uuid::Uuid;
-use crate::enums::{AttributeCategory, ImplicitEquipmentEffectSource, PitchCategory, PitchType};
+use crate::enums::{AttributeCategory, EquipmentEffectPhase, ImplicitEquipmentEffectSource, PitchCategory, PitchType};
 use crate::utils::{extra_fields_deserialize, MaybeRecognizedHelper, SometimesMissingHelper, TimestampHelper};
 use crate::{
     enums::{
@@ -641,6 +641,13 @@ pub struct EquipmentEffect {
     )]
     #[serde_as(as = "SometimesMissingHelper<_>")]
     pub tier: AddedLaterResult<u32>,
+
+    // Only exists when effect_type is ZoneConditionalMultiplier
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub zone: Option<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<MaybeRecognizedHelper<_>>")]
+    pub phase: Option<MaybeRecognizedResult<EquipmentEffectPhase>>,
 
     #[serde(flatten, deserialize_with = "extra_fields_deserialize")]
     pub extra_fields: serde_json::Map<String, serde_json::Value>,

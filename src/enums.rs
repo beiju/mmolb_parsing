@@ -2271,6 +2271,26 @@ pub enum Handedness {
 pub enum EquipmentEffectType {
     FlatBonus,
     Multiplier,
+    ZoneConditionalMultiplier,
+}
+
+#[derive(
+    Debug,
+    Serialize,
+    Deserialize,
+    Clone,
+    Copy,
+    EnumIter,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumString,
+    IntoStaticStr,
+    Display,
+)]
+pub enum EquipmentEffectPhase {
+    Batting,
+    Pitching,
 }
 
 #[derive(
