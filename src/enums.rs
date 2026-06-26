@@ -1162,6 +1162,7 @@ pub enum GameStat {
     BonusStrikes,
     BonusStrikesRisp,
     FloodedPlate,
+    FloodedPlateRisp,
 }
 
 #[derive(
