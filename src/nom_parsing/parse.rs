@@ -29,7 +29,7 @@ use super::{
     },
     ParsingContext,
 };
-use crate::nom_parsing::shared::{double_strike, efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, wither, IResult};
+use crate::nom_parsing::shared::{double_trouble, efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, swept_away, wither, IResult};
 use crate::parsed_event::{ContainResult, PartyDurabilityLoss, PlacedPlayer, WitherResult};
 use crate::{
     enums::{EventType, GameOverMessage, HomeAway, MoundVisitType, NowBattingStats},
@@ -598,18 +598,25 @@ fn now_batting<'output>() -> impl MyParser<'output, ParsedEventMessage<&'output 
     context(
         "Now Batting",
         all_consuming(alt((
+            // When there are stats
             (
                 preceded(
                     tag("Now batting: "),
                     parse_terminated(" (").and_then(verify_name),
                 ),
                 terminated(now_batting_stats, tag(")")),
+                opt(preceded(tag(" "), swept_away)),
             )
-                .map(|(batter, stats)| ParsedEventMessage::NowBatting { batter, stats }),
-            preceded(tag("Now batting: "), verify_name).map(|batter| {
+                .map(|(batter, stats, player_swept_away)| ParsedEventMessage::NowBatting { batter, stats, player_swept_away }),
+            // When there are no stats
+            (
+                preceded(tag("Now batting: "), verify_name),
+                opt(preceded(tag(" "), swept_away)),
+            ).map(|(batter, player_swept_away)| {
                 ParsedEventMessage::NowBatting {
                     batter,
                     stats: NowBattingStats::NoStats,
+                    player_swept_away,
                 }
             }),
         ))),
@@ -867,7 +874,7 @@ fn field<'parse, 'output: 'parse>(
             sentence(out),
             scores_and_advances,
             opt(ejection(parsing_context)),
-            opt(preceded(tag(" "), double_strike)),
+            opt(preceded(tag(" "), double_trouble)),
         ),
     )
     .map(

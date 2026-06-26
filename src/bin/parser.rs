@@ -719,8 +719,8 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
                 pitcher_status.as_ref().map(|status| status.discriminant())
             )
         }
-        ParsedEventMessage::NowBatting { batter: _, stats } => {
-            format!("stats: {}", stats.discriminant())
+        ParsedEventMessage::NowBatting { batter: _, stats, player_swept_away } => {
+            format!("stats: {}, player_swept_away: {}", stats.discriminant(), player_swept_away.is_some())
         }
         ParsedEventMessage::InningEnd { number, side } => {
             format!("number: {number}, side: {side}")

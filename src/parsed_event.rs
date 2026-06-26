@@ -88,6 +88,7 @@ pub enum ParsedEventMessage<S> {
     NowBatting {
         batter: S,
         stats: NowBattingStats,
+        player_swept_away: Option<S>,
     },
     InningEnd {
         number: u8,
@@ -946,7 +947,7 @@ impl<S: Display> ParsedEventMessage<S> {
                 };
                 format!("Start of the {side} of the {ordinal}. {batting_team} batting.{automatic_runner}{pitcher_message}")
             }
-            Self::NowBatting { batter, stats } => {
+            Self::NowBatting { batter, stats, player_swept_away } => {
                 let stats = match stats {
                     NowBattingStats::FirstPA => " (1st PA of game)".to_string(),
                     NowBattingStats::Stats(stats) => {
@@ -961,7 +962,10 @@ impl<S: Display> ParsedEventMessage<S> {
                     }
                     NowBattingStats::NoStats => String::new(),
                 };
-                format!("Now batting: {batter}{stats}")
+                let player_swept_away = player_swept_away.as_ref()
+                    .map_or(String::new(), |player| format!(" <br>{player} was swept away in the 🌊 Flood!"));
+
+                format!("Now batting: {batter}{stats}{player_swept_away}")
             }
             Self::InningEnd { number, side } => {
                 let ordinal = match number {

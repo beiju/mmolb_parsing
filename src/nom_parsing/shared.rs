@@ -1189,10 +1189,15 @@ pub(super) fn efflorescences(input: &str) -> IResult<'_, &str, Vec<Efflorescence
     many0(preceded(tag("<br>🌹 "), efflorescence)).parse(input)
 }
 
-pub(super) fn double_strike(input: &str) -> IResult<'_, &str, PlacedPlayer<&str>> {
+pub(super) fn double_trouble(input: &str) -> IResult<'_, &str, PlacedPlayer<&str>> {
     let (input, player) = parse_terminated(" caused ‼️ Double Trouble!").parse(input)?;
     let (_, placed_player) = placed_player_eof.parse(player)?;
     Ok((input, placed_player))
+}
+
+pub(super) fn swept_away(input: &str) -> IResult<'_, &str, &str> {
+    let (input, _) = tag("<br>").parse(input)?;
+    parse_terminated(" was swept away in the 🌊 Flood!").parse(input)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

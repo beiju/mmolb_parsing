@@ -1161,6 +1161,7 @@ pub enum GameStat {
     // Season 13
     BonusStrikes,
     BonusStrikesRisp,
+    FloodedPlate,
 }
 
 #[derive(
