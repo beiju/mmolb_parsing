@@ -2462,6 +2462,12 @@ pub enum Cheer {
     #[strum(to_string = "The stands erupt with booing")]
     TheStandsEruptWithBooing,
 
+    // Added in s13 (more jeers)
+    #[strum(to_string = "The crowd cheers sarcastically")]
+    TheCrowsCheersSarcastically,
+    #[strum(to_string = "Every section piles on with relentless heckling")]
+    EverySectionPilesOnWithRelentlessHeckling,
+
     #[strum(default)]
     Unknown(String),
 }
