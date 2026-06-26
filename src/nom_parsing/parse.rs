@@ -119,6 +119,7 @@ pub fn parse_event<'parse, 'output: 'parse>(
         }
         EventType::WeatherSimulacrum => weather_simulacrum().parse(event.message.as_str()),
         EventType::WeatherNoisy => weather_noisy().parse(event.message.as_str()),
+        EventType::EndGameTokens => end_game_tokens().parse(&event.message),
     }
     .finish()
     .map(|(_, o)| o)
@@ -1830,6 +1831,33 @@ fn weather_noisy<'parse, 'output: 'parse>(
     };
 
     context("Weather Simulacrum", f)
+}
+
+fn end_game_tokens<'parse, 'output: 'parse>(
+) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
+    let f = |input| {
+        let (input, winning_emoji_team) = parse_terminated(" earned ").parse(input)?;
+        let (_, winning_team) = emoji_team_eof(winning_emoji_team)?;
+        let (input, winning_team_income) = u32.parse(input)?;
+        let (input, _) = tag(" 🪙. ").parse(input)?;
+        
+        let (input, losing_emoji_team) = parse_terminated(" earned ").parse(input)?;
+        let (_, losing_team) = emoji_team_eof(losing_emoji_team)?;
+        let (input, losing_team_income) = u32.parse(input)?;
+        let (input, _) = tag(" 🪙.").parse(input)?;
+
+        Ok((
+            input,
+            ParsedEventMessage::EndGameIncome {
+                winning_team,
+                winning_team_income,
+                losing_team,
+                losing_team_income,
+            },
+        ))
+    };
+
+    context("End game tokens", f)
 }
 
 #[cfg(test)]

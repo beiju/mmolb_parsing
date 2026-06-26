@@ -352,6 +352,14 @@ pub enum ParsedEventMessage<S> {
         ump_team: EmojiTeam<S>,
         tokens_earnt: u32,
     },
+
+    // Season 13
+    EndGameIncome {
+        winning_team: EmojiTeam<S>,
+        winning_team_income: u32,
+        losing_team: EmojiTeam<S>,
+        losing_team_income: u32,
+    },
 }
 
 impl<S> ParsedEventMessage<S> {
@@ -403,6 +411,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrum { .. } => None,
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
+            ParsedEventMessage::EndGameIncome { .. } => None,
         }
     }
 
@@ -454,6 +463,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrum { .. } => None,
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
+            ParsedEventMessage::EndGameIncome { .. } => None,
         }
     }
     
@@ -505,6 +515,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrum { .. } => None,
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
+            ParsedEventMessage::EndGameIncome { .. } => None,
         }
     }
     
@@ -556,6 +567,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrum { .. } => None,
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
+            ParsedEventMessage::EndGameIncome { .. } => None,
         }
     }
     
@@ -607,6 +619,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrum { .. } => None,
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
+            ParsedEventMessage::EndGameIncome { .. } => None,
         }
     }
     
@@ -658,6 +671,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrum { .. } => None,
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
+            ParsedEventMessage::EndGameIncome { .. } => None,
         }
     }
     
@@ -709,6 +723,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrum { .. } => None,
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
+            ParsedEventMessage::EndGameIncome { .. } => None,
         }
     }
     
@@ -760,6 +775,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrum { .. } => None,
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
+            ParsedEventMessage::EndGameIncome { .. } => None,
         }
     }
     
@@ -811,6 +827,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrum { .. } => None,
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
+            ParsedEventMessage::EndGameIncome { .. } => None,
         }
     }
 }
@@ -1645,6 +1662,9 @@ impl<S: Display> ParsedEventMessage<S> {
                 tokens_earnt,
             } => {
                 format!("{player_team} were defeated by the {ump_team} and earned {tokens_earnt} 🪙.")
+            }
+            Self::EndGameIncome { winning_team, winning_team_income, losing_team, losing_team_income } => {
+                format!("{winning_team} earned {winning_team_income} 🪙. {losing_team} earned {losing_team_income} 🪙.")
             }
         }
     }

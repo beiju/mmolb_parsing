@@ -117,6 +117,9 @@ pub enum EventType {
     #[strum(to_string = "Weather_Noisy")]
     #[serde(rename = "Weather_Noisy")]
     WeatherNoisy,
+
+    // Season 13
+    EndGameTokens,
 }
 
 /// Top or bottom of an inning.
