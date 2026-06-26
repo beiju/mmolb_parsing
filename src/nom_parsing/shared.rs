@@ -1189,6 +1189,12 @@ pub(super) fn efflorescences(input: &str) -> IResult<'_, &str, Vec<Efflorescence
     many0(preceded(tag("<br>🌹 "), efflorescence)).parse(input)
 }
 
+pub(super) fn double_strike(input: &str) -> IResult<'_, &str, PlacedPlayer<&str>> {
+    let (input, player) = parse_terminated(" caused ‼️ Double Trouble!").parse(input)?;
+    let (_, placed_player) = placed_player_eof.parse(player)?;
+    Ok((input, placed_player))
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FeedEventParty<S> {
     pub player_name: S,

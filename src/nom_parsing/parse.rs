@@ -29,7 +29,7 @@ use super::{
     },
     ParsingContext,
 };
-use crate::nom_parsing::shared::{efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, wither, IResult};
+use crate::nom_parsing::shared::{double_strike, efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, wither, IResult};
 use crate::parsed_event::{ContainResult, PartyDurabilityLoss, PlacedPlayer, WitherResult};
 use crate::{
     enums::{EventType, GameOverMessage, HomeAway, MoundVisitType, NowBattingStats},
@@ -867,10 +867,11 @@ fn field<'parse, 'output: 'parse>(
             sentence(out),
             scores_and_advances,
             opt(ejection(parsing_context)),
+            opt(preceded(tag(" "), double_strike)),
         ),
     )
     .map(
-        |((batter, sacrifice, fielders), (out_one, out_two, (scores, advances), ejection))| {
+        |((batter, sacrifice, fielders), (out_one, out_two, (scores, advances), ejection, double_trouble))| {
             ParsedEventMessage::DoublePlayGrounded {
                 batter,
                 fielders,
@@ -880,6 +881,7 @@ fn field<'parse, 'output: 'parse>(
                 advances,
                 sacrifice,
                 ejection,
+                double_trouble,
             }
         },
     );

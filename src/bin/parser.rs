@@ -933,13 +933,15 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             advances,
             sacrifice,
             ejection,
+            double_trouble,
         } => {
             format!(
-                "fielders: {}, sacrifice: {sacrifice}, scores: {}, advances: {}, ejection: {}",
+                "fielders: {}, sacrifice: {sacrifice}, scores: {}, advances: {}, ejection: {}, double_trouble: {}",
                 fielders.len(),
                 scores.len(),
                 advances.len(),
-                ejection.is_some()
+                ejection.is_some(),
+                double_trouble.is_some(),
             )
         }
         ParsedEventMessage::DoublePlayCaught {

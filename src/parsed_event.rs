@@ -246,6 +246,7 @@ pub enum ParsedEventMessage<S> {
         advances: Vec<RunnerAdvance<S>>,
         sacrifice: bool,
         ejection: Option<Ejection<S>>,
+        double_trouble: Option<PlacedPlayer<S>>,
     },
     DoublePlayCaught {
         batter: S,
@@ -1420,6 +1421,7 @@ impl<S: Display> ParsedEventMessage<S> {
                 advances,
                 sacrifice,
                 ejection,
+                double_trouble,
             } => {
                 let fielders = unparse_fielders_for_play(fielders);
                 let scores_and_advances = unparse_scores_and_advances(scores, advances);
@@ -1430,6 +1432,9 @@ impl<S: Display> ParsedEventMessage<S> {
                 } else {
                     String::new()
                 };
+                let double_trouble = double_trouble
+                    .as_ref()
+                    .map_or(String::new(), |player| format!(" {player} caused ‼️ Double Trouble!"));
 
                 let verb = if Breakpoints::Season5TenseChange.before(
                     context.season,
@@ -1441,7 +1446,7 @@ impl<S: Display> ParsedEventMessage<S> {
                     "grounds"
                 };
 
-                format!("{batter} {verb} into a {sacrifice}double play{fielders}. {out_one} {out_two}{scores_and_advances}{ejection}")
+                format!("{batter} {verb} into a {sacrifice}double play{fielders}. {out_one} {out_two}{scores_and_advances}{ejection}{double_trouble}")
             }
             Self::DoublePlayCaught {
                 batter,
