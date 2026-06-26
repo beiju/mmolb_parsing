@@ -422,6 +422,14 @@ fn weather_prosperity<'parse, 'output: 'parse>(
         "Weather Prosperity",
         all_consuming(alt((
             variations,
+            end_game_tokens_inner.map(|(winning_team, winning_team_income, losing_team, losing_team_income)| {
+               ParsedEventMessage::WeatherProsperityS13 {
+                   winning_team,
+                   winning_team_income,
+                   losing_team,
+                   losing_team_income,
+               }
+            }),
             value(
                 ParsedEventMessage::KnownBug {
                     bug: KnownBug::NoOneProspers,
@@ -1085,14 +1093,15 @@ fn pitch<'parse, 'output: 'parse>(
         .and(door_prizes)
         .and(opt(wither(parsing_context)))
         .and(efflorescences)
+        .and(opt(tag(" 😲 Surprise Strike!")).map(|opt| opt.is_some()))
         .map(
-            |(
+            |((
                 (
                     (((((strike, (count, steals)), aurora_photos), cheer), ejection), door_prizes),
                     wither,
                 ),
                 efflorescence,
-            )| ParsedEventMessage::Strike {
+            ), surprise_strike)| ParsedEventMessage::Strike {
                 strike,
                 steals,
                 count,
@@ -1102,6 +1111,7 @@ fn pitch<'parse, 'output: 'parse>(
                 door_prizes,
                 wither,
                 efflorescence,
+                surprise_strike,
             },
         );
 
@@ -1833,18 +1843,37 @@ fn weather_noisy<'parse, 'output: 'parse>(
     context("Weather Simulacrum", f)
 }
 
+fn end_game_tokens_inner(input: &str) -> IResult<'_, &str, (EmojiTeam<&str>, u32, EmojiTeam<&str>, u32)> {
+    let (input, winning_emoji_team) = parse_terminated(" earned ").parse(input)?;
+    let (_, winning_team) = emoji_team_eof(winning_emoji_team)?;
+    let (input, winning_team_income) = u32.parse(input)?;
+    let (input, _) = tag(" 🪙. ").parse(input)?;
+
+    let (input, losing_emoji_team) = parse_terminated(" earned ").parse(input)?;
+    let (_, losing_team) = emoji_team_eof(losing_emoji_team)?;
+    let (input, losing_team_income) = u32.parse(input)?;
+    let (input, _) = tag(" 🪙.").parse(input)?;
+
+    Ok((
+        input,
+        (
+            winning_team,
+            winning_team_income,
+            losing_team,
+            losing_team_income,
+        ),
+    ))
+}
+
 fn end_game_tokens<'parse, 'output: 'parse>(
 ) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
-    let f = |input| {
-        let (input, winning_emoji_team) = parse_terminated(" earned ").parse(input)?;
-        let (_, winning_team) = emoji_team_eof(winning_emoji_team)?;
-        let (input, winning_team_income) = u32.parse(input)?;
-        let (input, _) = tag(" 🪙. ").parse(input)?;
-        
-        let (input, losing_emoji_team) = parse_terminated(" earned ").parse(input)?;
-        let (_, losing_team) = emoji_team_eof(losing_emoji_team)?;
-        let (input, losing_team_income) = u32.parse(input)?;
-        let (input, _) = tag(" 🪙.").parse(input)?;
+    context("End game tokens", |input| {
+        let (input, (
+            winning_team,
+            winning_team_income,
+            losing_team,
+            losing_team_income,
+        )) = end_game_tokens_inner.parse(input)?;
 
         Ok((
             input,
@@ -1855,9 +1884,7 @@ fn end_game_tokens<'parse, 'output: 'parse>(
                 losing_team_income,
             },
         ))
-    };
-
-    context("End game tokens", f)
+    })
 }
 
 #[cfg(test)]

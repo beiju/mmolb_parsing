@@ -132,6 +132,7 @@ pub enum ParsedEventMessage<S> {
         door_prizes: Vec<DoorPrize<S>>,
         wither: Option<WitherStruggle<S>>,
         efflorescence: Vec<Efflorescence<S>>,
+        surprise_strike: bool,
     },
     Foul {
         foul: FoulType,
@@ -360,6 +361,14 @@ pub enum ParsedEventMessage<S> {
         losing_team: EmojiTeam<S>,
         losing_team_income: u32,
     },
+    // TODO Consolidate this with WeatherProsperity, ideally in a way that doesn't break if the
+    //   home and away teams have identical `EmojiTeam`s
+    WeatherProsperityS13 {
+        winning_team: EmojiTeam<S>,
+        winning_team_income: u32,
+        losing_team: EmojiTeam<S>,
+        losing_team_income: u32,
+    },
 }
 
 impl<S> ParsedEventMessage<S> {
@@ -412,6 +421,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
+            ParsedEventMessage::WeatherProsperityS13 { .. } => None,
         }
     }
 
@@ -464,6 +474,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
+            ParsedEventMessage::WeatherProsperityS13 { .. } => None,
         }
     }
     
@@ -516,6 +527,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
+            ParsedEventMessage::WeatherProsperityS13 { .. } => None,
         }
     }
     
@@ -568,6 +580,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
+            ParsedEventMessage::WeatherProsperityS13 { .. } => None,
         }
     }
     
@@ -620,6 +633,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
+            ParsedEventMessage::WeatherProsperityS13 { .. } => None,
         }
     }
     
@@ -672,6 +686,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
+            ParsedEventMessage::WeatherProsperityS13 { .. } => None,
         }
     }
     
@@ -724,6 +739,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
+            ParsedEventMessage::WeatherProsperityS13 { .. } => None,
         }
     }
     
@@ -776,6 +792,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
+            ParsedEventMessage::WeatherProsperityS13 { .. } => None,
         }
     }
     
@@ -828,6 +845,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherSimulacrumOffseason => None,
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
+            ParsedEventMessage::WeatherProsperityS13 { .. } => None,
         }
     }
 }
@@ -1049,6 +1067,7 @@ impl<S: Display> ParsedEventMessage<S> {
                 door_prizes,
                 wither,
                 efflorescence,
+                surprise_strike,
             } => {
                 let steals: Vec<String> = once(String::new())
                     .chain(steals.iter().map(|steal| steal.to_string()))
@@ -1076,8 +1095,11 @@ impl<S: Display> ParsedEventMessage<S> {
                     .chain(efflorescence.iter().map(|d| d.unparse()))
                     .collect::<Vec<_>>()
                     .join("<br>🌹 ");
+                let surprise_strike = surprise_strike
+                    .then(|| " 😲 Surprise Strike!")
+                    .unwrap_or("");
 
-                format!("{space}Strike, {strike}. {}-{}.{steals}{aurora_photos}{ejection}{cheer}{door_prizes}{wither}{efflorescence}", count.0, count.1)
+                format!("{space}Strike, {strike}. {}-{}.{steals}{aurora_photos}{ejection}{cheer}{door_prizes}{wither}{efflorescence}{surprise_strike}", count.0, count.1)
             }
             Self::Foul {
                 foul,
@@ -1664,6 +1686,9 @@ impl<S: Display> ParsedEventMessage<S> {
                 format!("{player_team} were defeated by the {ump_team} and earned {tokens_earnt} 🪙.")
             }
             Self::EndGameIncome { winning_team, winning_team_income, losing_team, losing_team_income } => {
+                format!("{winning_team} earned {winning_team_income} 🪙. {losing_team} earned {losing_team_income} 🪙.")
+            }
+            Self::WeatherProsperityS13 { winning_team, winning_team_income, losing_team, losing_team_income } => {
                 format!("{winning_team} earned {winning_team_income} 🪙. {losing_team} earned {losing_team_income} 🪙.")
             }
         }

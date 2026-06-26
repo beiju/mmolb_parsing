@@ -1157,6 +1157,10 @@ pub enum GameStat {
 
     // Season 5
     Holds,
+
+    // Season 13
+    BonusStrikes,
+    BonusStrikesRisp,
 }
 
 #[derive(
