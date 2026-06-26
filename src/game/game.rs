@@ -164,6 +164,13 @@ pub struct Game {
 
     pub event_log: Vec<Event>,
 
+    #[serde(
+        default = "SometimesMissingHelper::default_result",
+        skip_serializing_if = "Result::is_err"
+    )]
+    #[serde_as(as = "SometimesMissingHelper<_>")]
+    pub temp_flood_pitcher_restore: AddedLaterResult<HashMap<String, ()>>, // TODO item type
+
     #[serde(flatten, deserialize_with = "extra_fields_deserialize")]
     pub extra_fields: serde_json::Map<String, serde_json::Value>,
 }
