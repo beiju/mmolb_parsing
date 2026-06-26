@@ -371,6 +371,10 @@ pub enum ParsedEventMessage<S> {
         losing_team: EmojiTeam<S>,
         losing_team_income: u32,
     },
+    PartyFriendship {
+        pitcher_name: S,
+        batter_name: S,
+    }
 }
 
 impl<S> ParsedEventMessage<S> {
@@ -424,6 +428,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
             ParsedEventMessage::WeatherProsperityS13 { .. } => None,
+            ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
 
@@ -477,6 +482,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
             ParsedEventMessage::WeatherProsperityS13 { .. } => None,
+            ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
     
@@ -530,6 +536,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
             ParsedEventMessage::WeatherProsperityS13 { .. } => None,
+            ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
     
@@ -583,6 +590,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
             ParsedEventMessage::WeatherProsperityS13 { .. } => None,
+            ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
     
@@ -636,6 +644,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
             ParsedEventMessage::WeatherProsperityS13 { .. } => None,
+            ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
     
@@ -689,6 +698,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
             ParsedEventMessage::WeatherProsperityS13 { .. } => None,
+            ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
     
@@ -742,6 +752,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
             ParsedEventMessage::WeatherProsperityS13 { .. } => None,
+            ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
     
@@ -795,6 +806,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
             ParsedEventMessage::WeatherProsperityS13 { .. } => None,
+            ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
     
@@ -848,6 +860,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::WeatherNoisy { .. } => None,
             ParsedEventMessage::EndGameIncome { .. } => None,
             ParsedEventMessage::WeatherProsperityS13 { .. } => None,
+            ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
 }
@@ -1699,6 +1712,9 @@ impl<S: Display> ParsedEventMessage<S> {
             }
             Self::WeatherProsperityS13 { winning_team, winning_team_income, losing_team, losing_team_income } => {
                 format!("{winning_team} earned {winning_team_income} 🪙. {losing_team} earned {losing_team_income} 🪙.")
+            }
+            Self::PartyFriendship { pitcher_name, batter_name } => {
+                format!("<strong>🥳 {pitcher_name} and {batter_name} are Partying!</strong> They became Friends!")
             }
         }
     }

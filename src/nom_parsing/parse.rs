@@ -110,7 +110,7 @@ pub fn parse_event<'parse, 'output: 'parse>(
         EventType::WeatherProsperity => weather_prosperity(parsing_context).parse(&event.message),
         EventType::Balk => balk(parsing_context).parse(&event.message),
         EventType::PhotoContest => photo_contest(parsing_context).parse(event.message.as_str()),
-        EventType::Party => party(parsing_context).parse(event.message.as_str()),
+        EventType::Party => party().parse(event.message.as_str()),
         EventType::WeatherReflection => weather_reflection(parsing_context).parse(&event.message),
         EventType::WeatherWither => weather_wither(parsing_context).parse(&event.message),
         EventType::LinealBeltTransfer => lineal_belt(parsing_context).parse(event.message.as_str()),
@@ -257,7 +257,14 @@ fn party_durability_loss<'parse, 'output: 'parse>(
 }
 
 fn party<'parse, 'output: 'parse>(
-    _parsing_context: &'parse ParsingContext<'parse>,
+) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
+    alt((
+        party_for_attributes(),
+        party_for_friends(),
+    ))
+}
+
+fn party_for_attributes<'parse, 'output: 'parse>(
 ) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
     context(
         "Party",
@@ -300,6 +307,29 @@ fn party<'parse, 'output: 'parse>(
             batter_amount_gained,
             batter_attribute,
             durability_loss,
+        },
+    )
+}
+
+fn party_for_friends<'parse, 'output: 'parse>(
+) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
+    context(
+        "Party",
+        all_consuming(preceded(
+            tag("<strong>🥳 "),
+            (
+                parse_terminated(" and ").and_then(verify_name),
+                parse_terminated(" are Partying!</strong> They became Friends!").and_then(verify_name),
+            ),
+        )),
+    )
+    .map(
+        |(
+            pitcher_name,
+            batter_name,
+        )| ParsedEventMessage::PartyFriendship {
+            pitcher_name,
+            batter_name,
         },
     )
 }
