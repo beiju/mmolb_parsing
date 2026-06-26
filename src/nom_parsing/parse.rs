@@ -29,8 +29,8 @@ use super::{
     },
     ParsingContext,
 };
-use crate::nom_parsing::shared::{double_trouble, efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, swept_away, wither, IResult};
-use crate::parsed_event::{ContainResult, PartyDurabilityLoss, PlacedPlayer, WitherResult};
+use crate::nom_parsing::shared::{double_trouble, efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, side_team, swept_away, wither, IResult};
+use crate::parsed_event::{BasicPitcherSwap, ContainResult, PartyDurabilityLoss, PlacedPlayer, WitherResult};
 use crate::{
     enums::{EventType, GameOverMessage, HomeAway, MoundVisitType, NowBattingStats},
     game::Event,
@@ -1251,7 +1251,7 @@ fn inning_start<'parse, 'output: 'parse>(
     parsing_context: &'parse ParsingContext<'parse>,
 ) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
     let parser = |input: &'output str| {
-        let pitching_team_emoji = |input| match event.inning.pitching_team() {
+        let mut pitching_team_emoji = |input| match event.inning.pitching_team() {
             Some(side) => team_emoji(side, parsing_context).parse(input),
             None => fail().parse(input),
         };
@@ -1284,6 +1284,42 @@ fn inning_start<'parse, 'output: 'parse>(
                 },
             );
 
+        // Yeah, this name is confusing with pitching_team_emoji, sorry
+        let mut pitching_emoji_team = |input| match event.inning.pitching_team() {
+            Some(side) => side_team(side, parsing_context).parse(input),
+            None => fail().parse(input),
+        };
+
+        let preempting_pitcher = move |input| {
+            let (input, _) = tag(" ").parse(input)?;
+            let (input, leaving_placed_pitcher) = parse_terminated(" is leaving the game. ").parse(input)?;
+            let (_, leaving_pitcher) = placed_player_eof.parse(leaving_placed_pitcher)?;
+            let (input, _) = pitching_team_emoji.parse(input)?;
+            let (input, _) = tag(" ").parse(input)?;
+            let (input, arriving_placed_pitcher) = parse_terminated(" takes the mound.").parse(input)?;
+            let (_, arriving_pitcher) = placed_player_eof.parse(arriving_placed_pitcher)?;
+
+            Ok((input, BasicPitcherSwap {
+                leaving_pitcher,
+                arriving_pitcher,
+            }))
+        };
+
+        let flooded_pitcher = move |input| {
+            let (input, _) = tag(" ").parse(input)?;
+            let (input, _) = pitching_emoji_team.parse(input)?;
+            let (input, _) = tag(" ").parse(input)?;
+            let (input, incoming_pitcher_name) = parse_terminated(" pitching. ").and_then(verify_name).parse(input)?;
+            let (input, swept_pitcher_name) = parse_terminated(" was swept away in the 🌊 Flood!").and_then(verify_name).parse(input)?;
+            let (input, preemption) = opt(preempting_pitcher).parse(input)?;
+
+            Ok((input, StartOfInningPitcher::Flooded {
+                swept_pitcher_name,
+                incoming_pitcher_name,
+                preemption,
+            }))
+        };
+
         let mut start_inning = |input| {
             let (input, _) = space0(input)?;
             let (input, _) = tag("Start of the ").parse(input)?;
@@ -1301,7 +1337,8 @@ fn inning_start<'parse, 'output: 'parse>(
 
         let automatic_runner = sentence(parse_terminated(" starts the inning on second base"));
 
-        let pitcher_status = alt((keep_pitcher, swap_pitcher));
+        // flooded_pitcher needs to be before keep_pitcher or it causes a false positive
+        let pitcher_status = alt((flooded_pitcher, keep_pitcher, swap_pitcher));
 
         let (input, (side, number, batting_team)) = start_inning.parse(input)?;
         let (input, automatic_runner) = opt(automatic_runner).parse(input)?;

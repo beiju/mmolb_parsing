@@ -168,8 +168,8 @@ pub struct Game {
         default = "SometimesMissingHelper::default_result",
         skip_serializing_if = "Result::is_err"
     )]
-    #[serde_as(as = "SometimesMissingHelper<_>")]
-    pub temp_flood_pitcher_restore: AddedLaterResult<HashMap<String, ()>>, // TODO item type
+    #[serde_as(as = "SometimesMissingHelper<HashMap<_, MaybeRecognizedHelper<_>>>")]
+    pub temp_flood_pitcher_restore: AddedLaterResult<HashMap<String, MaybeRecognizedResult<Slot>>>,
 
     #[serde(flatten, deserialize_with = "extra_fields_deserialize")]
     pub extra_fields: serde_json::Map<String, serde_json::Value>,

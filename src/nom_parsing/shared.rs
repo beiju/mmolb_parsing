@@ -1832,6 +1832,18 @@ pub(super) fn election_applied_level_ups(input: &str) -> IResult<'_, &str, (&str
     Ok((input, (player_name, num_level_ups)))
 }
 
+pub(super) fn side_team<'parse, 'output>(
+    side: HomeAway,
+    parsing_context: &ParsingContext<'parse>,
+) -> impl MyParser<'output, (&'output str, &'output str)> + 'parse {
+    let emoji_team = match side {
+        HomeAway::Home => parsing_context.home_emoji_team,
+        HomeAway::Away => parsing_context.away_emoji_team,
+    };
+
+    move |input| separated_pair(tag(emoji_team.emoji), tag(" "), tag(emoji_team.name)).parse(input)
+}
+
 pub(super) fn team_emoji<'parse, 'output>(
     side: HomeAway,
     parsing_context: &ParsingContext<'parse>,

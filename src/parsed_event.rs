@@ -952,6 +952,30 @@ impl<S: Display> ParsedEventMessage<S> {
                             .unwrap_or_default();
                         format!(" {leaving_emoji}{leaving_pitcher} is leaving the game. {arriving_emoji}{arriving_pitcher} takes the mound.")
                     }
+                    Some(StartOfInningPitcher::Flooded {
+                             swept_pitcher_name,
+                             incoming_pitcher_name,
+                             preemption,
+                         }) => {
+                        let preemption = preemption.as_ref()
+                            .map_or_else(String::new, |BasicPitcherSwap { leaving_pitcher, arriving_pitcher }| {
+                               format!(
+                                   " {leaving_pitcher} is leaving the game. {} {arriving_pitcher} takes the mound.",
+                                   match side {
+                                       TopBottom::Top => context.home_emoji_team.emoji,
+                                       TopBottom::Bottom => context.away_emoji_team.emoji,
+                                   }
+                               )
+                            });
+
+                        format!(
+                            " {} {incoming_pitcher_name} pitching. {swept_pitcher_name} was swept away in the 🌊 Flood!{preemption}",
+                            match side {
+                                TopBottom::Top => context.home_emoji_team,
+                                TopBottom::Bottom => context.away_emoji_team,
+                            }
+                        )
+                    }
                     None => String::new(),
                 };
                 let automatic_runner = match automatic_runner {
@@ -1774,6 +1798,13 @@ pub enum StartOfInningPitcher<S> {
         arriving_emoji: Option<S>,
         arriving_pitcher: PlacedPlayer<S>,
     },
+    Flooded {
+        swept_pitcher_name: S,
+        incoming_pitcher_name: S,
+        // It's possible for a flood event to replace a pitcher and then the
+        // closer logic to replace THAT pitcher. That's what this field is for
+        preemption: Option<BasicPitcherSwap<S>>,
+    }
 }
 
 /// Either an Out or an Error - e.g. for a Fielder's Choice.
@@ -1860,6 +1891,13 @@ impl<S: AsRef<str>> PlacedPlayer<S> {
             place: self.place,
         }
     }
+}
+
+// TODO Where else could this be used?
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub struct BasicPitcherSwap<S> {
+    pub leaving_pitcher: PlacedPlayer<S>,
+    pub arriving_pitcher: PlacedPlayer<S>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
