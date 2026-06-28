@@ -899,8 +899,9 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             sacrifice,
             perfect,
             ejection,
+            jetpack,
         } => {
-            format!("fair_ball_type: {fair_ball_type}, sacrifice: {sacrifice}, perfect: {perfect}, scores: {}, advances: {}, ejection: {}", scores.len(), advances.len(), ejection.is_some())
+            format!("fair_ball_type: {fair_ball_type}, sacrifice: {sacrifice}, perfect: {perfect}, scores: {}, advances: {}, ejection: {}, jetpack: {jetpack}", scores.len(), advances.len(), ejection.is_some())
         }
         ParsedEventMessage::GroundedOut {
             batter: _,

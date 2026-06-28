@@ -730,15 +730,22 @@ fn field<'parse, 'output: 'parse>(
         },
     );
 
-    let caught_out = try_splits(&['.', '!'], |sentence, delimiter, rest| {
+    let caught_out = try_splits(&['.', '!'], |sentence, _, rest| {
         let (sentence, (batter, fair_ball_type)) =
             parse_and(fly_ball_type_verb_name, " ").parse(sentence)?;
         let (sentence, _) = tag(" out ").parse(sentence)?;
         let (sentence, sacrifice) = opt(tag("on a sacrifice fly ")).parse(sentence)?;
         let sacrifice = sacrifice.is_some();
         let (sentence, _) = tag("to ").parse(sentence)?;
-        let (sentence, catcher) = placed_player_eof(sentence)?;
-        assert_eq!(sentence, "");
+        let (sentence, jetpack) = match sentence.strip_suffix(" flying a 🚀 Jetpack") {
+            Some(sentence) => (sentence, true),
+            None => (sentence, false),
+        };
+        let (sentence, caught_by) = placed_player_eof(sentence)?;
+
+        if sentence != "" {
+            tracing::error!("'{sentence}' leftover in caught_out try_splits");
+        }
 
         let (rest, (scores, advances)) = scores_and_advances.parse(rest)?;
         let (rest, perfect) = opt(bold(exclamation(tag("Perfect catch")))).parse(rest)?;
@@ -750,12 +757,13 @@ fn field<'parse, 'output: 'parse>(
             ParsedEventMessage::CaughtOut {
                 batter,
                 fair_ball_type,
-                caught_by: catcher,
+                caught_by,
                 sacrifice,
                 scores,
                 advances,
                 perfect,
                 ejection,
+                jetpack,
             },
         ))
     });

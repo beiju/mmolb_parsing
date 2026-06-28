@@ -212,6 +212,8 @@ pub enum ParsedEventMessage<S> {
         sacrifice: bool,
         perfect: bool,
         ejection: Option<Ejection<S>>,
+        // Season 13
+        jetpack: bool,
     },
     GroundedOut {
         batter: S,
@@ -1371,6 +1373,7 @@ impl<S: Display> ParsedEventMessage<S> {
                 ejection,
                 sacrifice,
                 perfect,
+                jetpack,
             } => {
                 let fair_ball_type = fair_ball_type.verb_name();
                 let scores_and_advances = unparse_scores_and_advances(scores, advances);
@@ -1390,7 +1393,9 @@ impl<S: Display> ParsedEventMessage<S> {
                     String::new()
                 };
 
-                format!("{batter} {fair_ball_type} out {sacrifice}to {catcher}.{scores_and_advances}{perfect}{ejection}")
+                let catcher_suffix = if *jetpack { " flying a 🚀 Jetpack!" } else { "." };
+
+                format!("{batter} {fair_ball_type} out {sacrifice}to {catcher}{catcher_suffix}{scores_and_advances}{perfect}{ejection}")
             }
             Self::GroundedOut {
                 batter,

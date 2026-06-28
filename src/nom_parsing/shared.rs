@@ -423,7 +423,7 @@ pub(super) fn all_consuming_sentence_and<
 
 /// At each of the given delimiters, will split the input into (before, delimiter, after),
 /// which will be passed into the given function.
-/// 
+///
 /// The first time f returns Ok(), this function returns Ok(), else it returns Err()
 pub(super) fn try_splits<'parse, 'output, F, O: Debug>(
     delimiters: &'parse [char],
