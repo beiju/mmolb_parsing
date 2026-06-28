@@ -1141,7 +1141,7 @@ impl<S: Display> ParsedEventMessage<S> {
                     .then(|| " 😲 Surprise Strike!")
                     .unwrap_or("");
 
-                format!("{space}Strike, {strike}. {}-{}.{steals}{aurora_photos}{ejection}{cheer}{door_prizes}{wither}{efflorescence}{surprise_strike}", count.0, count.1)
+                format!("{space}Strike, {strike}. {}-{}.{steals}{aurora_photos}{ejection}{surprise_strike}{cheer}{door_prizes}{wither}{efflorescence}", count.0, count.1)
             }
             Self::Foul {
                 foul,

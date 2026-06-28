@@ -1127,20 +1127,20 @@ fn pitch<'parse, 'output: 'parse>(
     let strike = sentence(preceded(tag("Strike, "), try_from_word))
         .and(cut((sentence(score_update), many0(base_steal_sentence))))
         .and(opt(preceded(tag(" "), aurora(parsing_context))))
+        .and(opt(tag(" 😲 Surprise Strike!")).map(|opt| opt.is_some()))
         .and(opt(preceded(tag(" "), cheer(parsing_context))))
         .and(opt(ejection(parsing_context)))
         .and(door_prizes)
         .and(opt(wither(parsing_context)))
         .and(efflorescences)
-        .and(opt(tag(" 😲 Surprise Strike!")).map(|opt| opt.is_some()))
         .map(
             |((
                 (
-                    (((((strike, (count, steals)), aurora_photos), cheer), ejection), door_prizes),
+                    (((((strike, (count, steals)), aurora_photos), surprise_strike), cheer), ejection), door_prizes),
                     wither,
                 ),
                 efflorescence,
-            ), surprise_strike)| ParsedEventMessage::Strike {
+            )| ParsedEventMessage::Strike {
                 strike,
                 steals,
                 count,
@@ -2025,7 +2025,8 @@ mod test {
                     scores: Vec::new(),
                     advances: Vec::new(),
                     sacrifice: false,
-                    ejection: None
+                    ejection: None,
+                    double_trouble: None,
                 }
             ))
         );
