@@ -269,7 +269,14 @@ pub enum ParsedTeamFeedEventText<S> {
         player_name: S,
         modification: ModificationType,
         augment_name: S,
-    } 
+    },
+    EndGameIncome {
+        team: EmojiTeam<S>,
+        tokens: u32,
+    },
+    PlayersBecameFriends {
+        player_names: [S; 2],
+    }
 }
 
 impl<S: Display> ParsedTeamFeedEventText<S> {
@@ -521,6 +528,12 @@ impl<S: Display> ParsedTeamFeedEventText<S> {
             }
             ParsedTeamFeedEventText::GainedModificationFromGreaterAugment { player_name, modification, augment_name } => {
                 format!("{player_name} gained {modification} via {augment_name}.")
+            }
+            ParsedTeamFeedEventText::EndGameIncome { team, tokens } => {
+                format!("{team} earned {tokens} 🪙.")
+            }
+            ParsedTeamFeedEventText::PlayersBecameFriends { player_names: [player1, player2] } => {
+                format!("{player1} became Friends with {player2}.")
             }
         }
     }

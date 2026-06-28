@@ -1977,6 +1977,15 @@ pub(super) fn player_greater_augment_mod(
     Ok((input, (player_name, modification, augment_name)))
 }
 
+pub(super) fn players_became_friends(
+    input: &str,
+) -> IResult<'_, &str, [&str; 2]> {
+    let (input, player1_name) = parse_terminated(" became Friends with ").parse(input)?;
+    let (input, player2_name) = parse_until_period_eof.parse(input)?;
+
+    Ok((input, [player1_name, player2_name]))
+}
+
 #[cfg(test)]
 mod test {
     use crate::{

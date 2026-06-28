@@ -1,4 +1,4 @@
-use crate::nom_parsing::shared::{election_applied_level_ups, feed_event_resumed_processing, player_greater_augment_mod};
+use crate::nom_parsing::shared::{election_applied_level_ups, feed_event_resumed_processing, player_greater_augment_mod, players_became_friends};
 use super::shared::{augment_event, bulk_immunized, emoji, emoji_team_eof, emoji_team_eof_maybe_no_space, feed_event_consumption_contest_specific, feed_event_contained, feed_event_delivery_discarded, feed_event_door_prize, feed_event_equipped_door_prize, feed_event_party, feed_event_wither, parse_until_period_eof, player_positions_swapped, player_reflected, players_election_swapped, purified, restyle, team_election_purified, training, Error, IResult};
 use crate::feed_event::{AttributeChange, GreaterAugment};
 use crate::nom_parsing::shared::{
@@ -149,6 +149,10 @@ fn game(event: &FeedEvent) -> impl TeamFeedEventParser<'_> {
                 gilded_umpires_payout
                     .map(|(team, earned_coins)|
                         ParsedTeamFeedEventText::GildedUmpiresPayout { team, earned_coins }),
+                end_game_income.map(|(team, tokens)|
+                    ParsedTeamFeedEventText::EndGameIncome { team, tokens }),
+                players_became_friends.map(|player_names|
+                    ParsedTeamFeedEventText::PlayersBecameFriends { player_names }),
                 fail(),
             )),
         ))
@@ -829,6 +833,14 @@ pub(super) fn golden_player_replacement_failed(input: &str) -> IResult<'_, &str,
     let (input, position_type) = parse_position_type.parse(input)?;
     let (input, _) = tag(".").parse(input)?;
     Ok((input, (position_type, team)))
+}
+
+pub(super) fn end_game_income(input: &str) -> IResult<'_, &str, (EmojiTeam<&str>, u32)> {
+    let (input, team_emoji_name) = parse_terminated(" earned ").parse(input)?;
+    let (_, team) = emoji_team_eof.parse(team_emoji_name)?;
+    let (input, earned_tokens) = u32.parse(input)?;
+    let (input, _) = tag(" 🪙.").parse(input)?;
+    Ok((input, (team, earned_tokens)))
 }
 
 pub(super) fn parse_position_type(input: &str) -> IResult<'_, &str, PositionType> {
