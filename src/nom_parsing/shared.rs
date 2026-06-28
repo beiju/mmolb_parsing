@@ -23,7 +23,6 @@ use crate::parsed_event::{
     ItemPrize, WitherStruggle,
 };
 use crate::player::{Deserialize, Serialize};
-use crate::team_feed::PurifiedOutcome;
 use crate::{
     enums::{
         Base, BatterStat, Day, FairBallDestination, FairBallType, HomeAway, NowBattingStats, Place,
@@ -101,6 +100,25 @@ impl<'parse> ParsingContext<'parse> {
     /// Whether this event is after the given time
     pub(crate) fn after(&self, time: impl Into<Time>) -> bool {
         time.into().after(self.season, self.day, self.event_index)
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum PurifiedOutcome {
+    Payment(u32),
+    PaymentAndImmunityRemoved(u32),
+    NoCorruption,
+    None,
+}
+
+impl PurifiedOutcome {
+    pub fn unparse<S: Display>(&self, player_name: S) -> String {
+        match self {
+            PurifiedOutcome::Payment(payment) => format!("{player_name} was Purified of 🫀 Corruption and earned {payment} 🪙."),
+            PurifiedOutcome::PaymentAndImmunityRemoved(payment) => format!("{player_name} was Purified of 🌹 Efflorescence, earned {payment} 🪙, and gained 🦠 Immunity."),
+            PurifiedOutcome::NoCorruption => format!("{player_name} was Purified of 🫀 Corruption. {player_name} had no Corruption to remove."),
+            PurifiedOutcome::None => format!("{player_name} was Purified of 🫀 Corruption."),
+        }
     }
 }
 

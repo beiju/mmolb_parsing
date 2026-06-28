@@ -7,7 +7,7 @@ use serde_with::serde_as;
 use crate::enums::{Slot, PositionType, WithNumberSign};
 use crate::feed_event::{AttributeChange, GreaterAugment};
 pub use crate::nom_parsing::parse_team_feed_event::parse_team_feed_event;
-use crate::nom_parsing::shared::{FeedEventDoorPrize, FeedEventParty, Grow, PositionSwap};
+use crate::nom_parsing::shared::{FeedEventDoorPrize, FeedEventParty, Grow, PositionSwap, PurifiedOutcome};
 use crate::parsed_event::{EmojiPlayer, EmojiTeam, GrowAttributeChange, Item};
 use crate::{
     enums::{Attribute, FeedEventType, ModificationType},
@@ -25,25 +25,6 @@ pub struct TeamFeed {
 
     #[serde(flatten, deserialize_with = "extra_fields_deserialize")]
     pub extra_fields: serde_json::Map<String, serde_json::Value>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum PurifiedOutcome {
-    Payment(u32),
-    PaymentAndImmunityRemoved(u32),
-    NoCorruption,
-    None,
-}
-
-impl PurifiedOutcome {
-    pub fn unparse<S: Display>(&self, player_name: S) -> String {
-        match self {
-            PurifiedOutcome::Payment(payment) => format!("{player_name} was Purified of 🫀 Corruption and earned {payment} 🪙."),
-            PurifiedOutcome::PaymentAndImmunityRemoved(payment) => format!("{player_name} was Purified of 🌹 Efflorescence, earned {payment} 🪙, and gained 🦠 Immunity."),
-            PurifiedOutcome::NoCorruption => format!("{player_name} was Purified of 🫀 Corruption. {player_name} had no Corruption to remove."),
-            PurifiedOutcome::None => format!("{player_name} was Purified of 🫀 Corruption."),
-        }
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

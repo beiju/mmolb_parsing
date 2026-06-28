@@ -1,3 +1,4 @@
+use crate::nom_parsing::shared::PurifiedOutcome;
 use std::fmt::{Display};
 
 use serde::{Deserialize, Serialize};
@@ -6,7 +7,6 @@ use serde_with::serde_as;
 use crate::feed_event::PlayerGreaterAugment;
 pub use crate::nom_parsing::parse_player_feed_event::parse_player_feed_event;
 use crate::nom_parsing::shared::{FeedEventDoorPrize, FeedEventParty, Grow, PositionSwap};
-use crate::team_feed::PurifiedOutcome;
 use crate::{
     enums::{Attribute, FeedEventType, ModificationType},
     feed_event::{
@@ -218,6 +218,9 @@ pub enum ParsedPlayerFeedEventText<S> {
         player_name: S,
         modification: ModificationType,
         augment_name: S,
+    },
+    PlayersBecameFriends {
+        player_names: [S; 2],
     }
 }
 
@@ -408,6 +411,9 @@ impl<S: Display> ParsedPlayerFeedEventText<S> {
             },
             ParsedPlayerFeedEventText::GainedModificationFromGreaterAugment { player_name, modification, augment_name } => {
                 format!("{player_name} gained {modification} via {augment_name}.")
+            },
+            ParsedPlayerFeedEventText::PlayersBecameFriends { player_names: [player1, player2] } => {
+                format!("{player1} became Friends with {player2}.")
             }
         }
     }

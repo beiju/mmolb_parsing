@@ -1,4 +1,4 @@
-use super::shared::{augment_event, lesser_boon, boon_recombobulated, falling_star, feed_event_contained, feed_event_door_prize, feed_event_effloresce, feed_event_efflorescence_growth, feed_event_equipped_door_prize, feed_event_party, feed_event_wither, grow, player_moved, player_positions_swapped, player_reflected, player_relegated, players_election_swapped, purified, restyle, election_applied_level_ups, Error, IResult, feed_event_resumed_processing, player_greater_augment_mod};
+use super::shared::{augment_event, lesser_boon, boon_recombobulated, falling_star, feed_event_contained, feed_event_door_prize, feed_event_effloresce, feed_event_efflorescence_growth, feed_event_equipped_door_prize, feed_event_party, feed_event_wither, grow, player_moved, player_positions_swapped, player_reflected, player_relegated, players_election_swapped, purified, restyle, election_applied_level_ups, Error, IResult, feed_event_resumed_processing, player_greater_augment_mod, players_became_friends};
 use crate::feed_event::PlayerGreaterAugment;
 use crate::{
     enums::{FeedEventType, ModificationType},
@@ -90,7 +90,7 @@ pub fn parse_player_feed_event(event: &FeedEvent) -> ParsedPlayerFeedEventText<&
     }
 }
 
-fn game<'output>(event: &'output FeedEvent) -> impl PlayerFeedEventParser<'output> {
+fn game(event: &'_ FeedEvent) -> impl PlayerFeedEventParser<'_> {
     context(
         "Game Feed Event",
         alt((
@@ -130,6 +130,8 @@ fn game<'output>(event: &'output FeedEvent) -> impl PlayerFeedEventParser<'outpu
 
             feed_delivery("the Consumption Contest")
                 .map(|delivery| ParsedPlayerFeedEventText::ConsumptionContestDelivery { delivery }),
+            players_became_friends.map(|player_names|
+                ParsedPlayerFeedEventText::PlayersBecameFriends { player_names }),
             fail(),
         )),
     )
