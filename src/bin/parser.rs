@@ -981,8 +981,16 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             scores,
             advances,
             ejection,
+            double_trouble,
         } => {
-            format!("fielders: {}, fair_ball_type: {fair_ball_type}, scores: {}, advances: {}, ejection: {}", fielders.len(), scores.len(), advances.len(), ejection.is_some())
+            format!(
+                "fielders: {}, fair_ball_type: {fair_ball_type}, scores: {}, advances: {}, ejection: {}, double_trouble: {}",
+                fielders.len(),
+                scores.len(),
+                advances.len(),
+                ejection.is_some(),
+                double_trouble.is_some(),
+            )
         }
         ParsedEventMessage::ReachOnFieldingError {
             batter: _,

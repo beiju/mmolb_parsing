@@ -259,6 +259,7 @@ pub enum ParsedEventMessage<S> {
         scores: Vec<S>,
         advances: Vec<RunnerAdvance<S>>,
         ejection: Option<Ejection<S>>,
+        double_trouble: Option<PlacedPlayer<S>>,
     },
     ReachOnFieldingError {
         batter: S,
@@ -1513,6 +1514,7 @@ impl<S: Display> ParsedEventMessage<S> {
                 scores,
                 advances,
                 ejection,
+                double_trouble,
             } => {
                 let fair_ball_type = fair_ball_type.verb_name();
                 let fielders = unparse_fielders_for_play(fielders);
@@ -1523,8 +1525,11 @@ impl<S: Display> ParsedEventMessage<S> {
                 } else {
                     String::new()
                 };
+                let double_trouble = double_trouble.as_ref().map_or(String::new(), |player| {
+                    format!(" {player} caused ‼️ Double Trouble!")
+                });
 
-                format!("{batter} {fair_ball_type} into a double play{fielders}. {out_two}{scores_and_advances}{ejection}")
+                format!("{batter} {fair_ball_type} into a double play{fielders}. {out_two}{scores_and_advances}{ejection}{double_trouble}")
             }
             Self::ReachOnFieldingError {
                 batter,

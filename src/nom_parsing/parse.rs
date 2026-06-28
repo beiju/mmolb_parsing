@@ -966,10 +966,11 @@ fn field<'parse, 'output: 'parse>(
             sentence(out),
             scores_and_advances,
             opt(ejection(parsing_context)),
+            opt(preceded(tag(" "), double_trouble)),
         ),
     )
     .map(
-        |(((batter, fair_ball_type), fielders), (out_two, (scores, advances), ejection))| {
+        |(((batter, fair_ball_type), fielders), (out_two, (scores, advances), ejection, double_trouble))| {
             ParsedEventMessage::DoublePlayCaught {
                 batter,
                 fair_ball_type,
@@ -978,6 +979,7 @@ fn field<'parse, 'output: 'parse>(
                 scores,
                 advances,
                 ejection,
+                double_trouble,
             }
         },
     );
