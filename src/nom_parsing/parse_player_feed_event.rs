@@ -494,7 +494,9 @@ fn seasonal_durability_loss_happened(
     let (input, durability_type) = alt((
         tag(" durability for playing in Season ").map(|_| None),
         tag(" LesserDurability in the Lesser League for playing in Season ").map(|_| Some(DurabilityType::Lesser)),
+        tag(" Lesser Durability in the Lesser League for playing in Season ").map(|_| Some(DurabilityType::Lesser)),
         tag(" GreaterDurability in the Greater League for playing in Season ").map(|_| Some(DurabilityType::Greater)),
+        tag(" Greater Durability in the Greater League for playing in Season ").map(|_| Some(DurabilityType::Greater)),
     )).parse(input)?;
     let (input, season) = u32.parse(input)?;
     let (input, _) = tag(".").parse(input)?;

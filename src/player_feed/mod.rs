@@ -293,8 +293,10 @@ impl<S: Display> ParsedPlayerFeedEventText<S> {
                 let durability_str = match durability_type {
                     None if durability_lost.is_none() => "Durability",
                     None => "durability",
-                    Some(DurabilityType::Lesser) => "LesserDurability in the Lesser League",
-                    Some(DurabilityType::Greater) => "GreaterDurability in the Greater League",
+                    Some(DurabilityType::Lesser) if event.season < 13 => "LesserDurability in the Lesser League",
+                    Some(DurabilityType::Lesser) => "Lesser Durability in the Lesser League",
+                    Some(DurabilityType::Greater) if event.season < 13 => "GreaterDurability in the Greater League",
+                    Some(DurabilityType::Greater) => "Greater Durability in the Greater League",
                 };
                 if let Some(durability_lost) = durability_lost {
                     format!("{player_name} lost {durability_lost} {durability_str} for playing in Season {season}.")
