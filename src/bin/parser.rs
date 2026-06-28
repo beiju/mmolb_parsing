@@ -99,6 +99,10 @@ struct Args {
     #[clap(long)]
     count: Option<u32>,
 
+    /// Remove text formatting for errors, so that piping stderr is more useful
+    #[clap(long, action)]
+    no_ansi_errs: bool,
+
     #[clap(long)]
     output_folder: Option<String>,
 }
@@ -200,11 +204,14 @@ fn main() {
     let args = Args::parse();
 
     let err_layer = tracing_subscriber::fmt::Layer::new()
-        .with_ansi(false)
+        .with_ansi(!args.no_ansi_errs)
         .with_writer(std::io::stderr.with_max_level(Level::ERROR));
 
-    let stdout_layer = tracing_subscriber::fmt::Layer::new()
-        .with_writer(std::io::stdout.with_max_level(args.with_max_level.unwrap_or(Level::INFO)));
+    let stdout_layer = tracing_subscriber::fmt::Layer::new().with_writer(
+        std::io::stdout
+            .with_max_level(args.with_max_level.unwrap_or(Level::INFO))
+            .with_min_level(Level::WARN),
+    );
 
     let collector = tracing_subscriber::registry()
         .with(err_layer)
