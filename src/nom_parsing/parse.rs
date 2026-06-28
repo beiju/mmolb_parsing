@@ -7,7 +7,6 @@ use super::{
     },
     ParsingContext,
 };
-use crate::enums::Place;
 use crate::nom_parsing::shared::{
     double_trouble, efflorescences, either_team_emoji, failed_ejection_tail,
     parse_until_exclamation_point_eof, parse_until_period_eof, side_team, swept_away, wither,
@@ -16,6 +15,7 @@ use crate::nom_parsing::shared::{
 use crate::parsed_event::{
     BasicPitcherSwap, ContainResult, PartyDurabilityLoss, PlacedPlayer, WitherResult,
 };
+use crate::{enums::Place, nom_parsing::shared::try_splits};
 use crate::{
     enums::{EventType, GameOverMessage, HomeAway, MoundVisitType, NowBattingStats},
     game::Event,
@@ -730,33 +730,35 @@ fn field<'parse, 'output: 'parse>(
         },
     );
 
-    let caught_out = all_consuming_sentence_and(
-        (
-            terminated(parse_and(fly_ball_type_verb_name, " "), tag(" out ")),
-            opt(tag("on a sacrifice fly ")).map(|sacrifice| sacrifice.is_some()),
-            preceded(tag("to "), placed_player_eof),
-        ),
-        (
-            scores_and_advances,
-            opt(bold(exclamation(tag("Perfect catch")))).map(|perfect| perfect.is_some()),
-            opt(ejection(parsing_context)),
-        ),
-    )
-    .map(
-        |(
-            ((batter, fair_ball_type), sacrifice, catcher),
-            ((scores, advances), perfect, ejection),
-        )| ParsedEventMessage::CaughtOut {
-            batter,
-            fair_ball_type,
-            caught_by: catcher,
-            sacrifice,
-            scores,
-            advances,
-            perfect,
-            ejection,
-        },
-    );
+    let caught_out = try_splits(&['.', '!'], |sentence, delimiter, rest| {
+        let (sentence, (batter, fair_ball_type)) =
+            parse_and(fly_ball_type_verb_name, " ").parse(sentence)?;
+        let (sentence, _) = tag(" out ").parse(sentence)?;
+        let (sentence, sacrifice) = opt(tag("on a sacrifice fly ")).parse(sentence)?;
+        let sacrifice = sacrifice.is_some();
+        let (sentence, _) = tag("to ").parse(sentence)?;
+        let (sentence, catcher) = placed_player_eof(sentence)?;
+        assert_eq!(sentence, "");
+
+        let (rest, (scores, advances)) = scores_and_advances.parse(rest)?;
+        let (rest, perfect) = opt(bold(exclamation(tag("Perfect catch")))).parse(rest)?;
+        let perfect = perfect.is_some();
+        let (rest, ejection) = opt(ejection(parsing_context)).parse(rest)?;
+
+        Ok((
+            rest,
+            ParsedEventMessage::CaughtOut {
+                batter,
+                fair_ball_type,
+                caught_by: catcher,
+                sacrifice,
+                scores,
+                advances,
+                perfect,
+                ejection,
+            },
+        ))
+    });
 
     let grounded_out = all_consuming_sentence_and(
         (

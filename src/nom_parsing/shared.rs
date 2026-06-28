@@ -421,6 +421,32 @@ pub(super) fn all_consuming_sentence_and<
     }
 }
 
+/// At each of the given delimiters, will split the input into (before, delimiter, after),
+/// which will be passed into the given function.
+/// 
+/// The first time f returns Ok(), this function returns Ok(), else it returns Err()
+pub(super) fn try_splits<'parse, 'output, F, O: Debug>(
+    delimiters: &'parse [char],
+    f: F,
+) -> impl Parser<&'output str, Output = O, Error = Error<'output>> + use<'parse, 'output, F, O>
+where
+    F: Fn(&'output str, &'output str, &'output str) -> IResult<'output, &'output str, O>,
+{
+    move |input: &'output str| {
+        input
+            .match_indices(delimiters)
+            .map(|(i, d)| f(&input[..i], d, &input[i + 1..]))
+            .filter(|r| r.is_ok())
+            .next()
+            .unwrap_or_else(|| {
+                IResult::Err(nom::Err::Error(VerboseError::from_error_kind(
+                    input,
+                    ErrorKind::Tag,
+                )))
+            })
+    }
+}
+
 /// Keeps searching for the delimiter until it finds an instance immediately followed by a valid input to the child parser.
 /// Returns everything up to the delimiter and the output of the child parser.
 pub fn parse_and<'output, F, O>(
