@@ -4,10 +4,12 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-use crate::enums::{Slot, PositionType, WithNumberSign};
+use crate::enums::{PositionType, Slot, WithNumberSign};
 use crate::feed_event::{AttributeChange, GreaterAugment};
 pub use crate::nom_parsing::parse_team_feed_event::parse_team_feed_event;
-use crate::nom_parsing::shared::{FeedEventDoorPrize, FeedEventParty, Grow, PositionSwap, PurifiedOutcome};
+use crate::nom_parsing::shared::{
+    FeedEventDoorPrize, FeedEventParty, Grow, PositionSwap, PurifiedOutcome,
+};
 use crate::parsed_event::{EmojiPlayer, EmojiTeam, GrowAttributeChange, Item};
 use crate::{
     enums::{Attribute, FeedEventType, ModificationType},
@@ -257,7 +259,7 @@ pub enum ParsedTeamFeedEventText<S> {
     },
     PlayersBecameFriends {
         player_names: [S; 2],
-    }
+    },
 }
 
 impl<S: Display> ParsedTeamFeedEventText<S> {

@@ -1,23 +1,9 @@
-use nom::bytes::complete::is_not;
-use nom::character::complete::u32;
-use nom::combinator::eof;
-use nom::number::double;
-use nom::{
-    branch::alt,
-    bytes::complete::{tag, take, take_till, take_until, take_until1, take_while},
-    character::complete::{one_of, space0, u16, u8},
-    combinator::{all_consuming, fail, opt, recognize, rest, value, verify},
-    error::{ErrorKind, ParseError},
-    multi::{count, many0, many1, separated_list1},
-    sequence::{delimited, preceded, separated_pair, terminated},
-    AsChar, Input, Parser,
+use crate::enums::{
+    Attribute, BenchSlot, BenchSlotLabel, CelestialEnergyTier, FoodName, FullSlotLabel,
+    ModificationType, Slot,
 };
-use nom_language::error::VerboseError;
-use std::fmt::{Display, Formatter};
-use std::{fmt::Debug, str::FromStr};
-use strum::IntoEnumIterator;
-use crate::enums::{Attribute, BenchSlot, BenchSlotLabel, CelestialEnergyTier, FoodName, FullSlotLabel, ModificationType, Slot};
 use crate::feed_event::FeedFallingStarOutcome;
+use crate::game::EventPitcherVersions;
 use crate::parsed_event::{
     Efflorescence, EfflorescenceOutcome, EjectionReplacement, EmojiFood, EmojiPlayer, ItemEquip,
     ItemPrize, WitherStruggle,
@@ -36,7 +22,24 @@ use crate::{
     time::{Breakpoints, Time},
     Game,
 };
-use crate::game::EventPitcherVersions;
+use nom::bytes::complete::is_not;
+use nom::character::complete::u32;
+use nom::combinator::eof;
+use nom::number::double;
+use nom::{
+    branch::alt,
+    bytes::complete::{tag, take, take_till, take_until, take_until1, take_while},
+    character::complete::{one_of, space0, u16, u8},
+    combinator::{all_consuming, fail, opt, recognize, rest, value, verify},
+    error::{ErrorKind, ParseError},
+    multi::{count, many0, many1, separated_list1},
+    sequence::{delimited, preceded, separated_pair, terminated},
+    AsChar, Input, Parser,
+};
+use nom_language::error::VerboseError;
+use std::fmt::{Display, Formatter};
+use std::{fmt::Debug, str::FromStr};
+use strum::IntoEnumIterator;
 
 pub(crate) type Error<'a> = VerboseError<&'a str>;
 pub(crate) type IResult<'a, I, O> = nom::IResult<I, O, Error<'a>>;
@@ -78,16 +81,12 @@ impl<'parse> ParsingContext<'parse> {
             season: game.season,
             day: game.day.as_ref().copied().ok(),
             pitcher_name: event_index.and_then(|event_index| {
-                game.event_log.get(event_index as usize).and_then(|event| {
-                    match &event.pitcher {
-                        EventPitcherVersions::New(pitcher) => {
-                            pitcher.name.map_as_str().player()
-                        }
-                        EventPitcherVersions::Old(pitcher) => {
-                            pitcher.map_as_str().player()
-                        }
-                    }
-                })
+                game.event_log
+                    .get(event_index as usize)
+                    .and_then(|event| match &event.pitcher {
+                        EventPitcherVersions::New(pitcher) => pitcher.name.map_as_str().player(),
+                        EventPitcherVersions::Old(pitcher) => pitcher.map_as_str().player(),
+                    })
             }),
         }
     }
@@ -1275,10 +1274,9 @@ pub(super) fn feed_event_party(input: &str) -> IResult<'_, &str, FeedEventParty<
     ))
 }
 
-pub(super) fn feed_event_delivery_discarded(
-    input: &str,
-) -> IResult<'_, &str, Item<&str>> {
-    let (input, item_str) = parse_terminated(" is discarded as no player can use it.").parse(input)?;
+pub(super) fn feed_event_delivery_discarded(input: &str) -> IResult<'_, &str, Item<&str>> {
+    let (input, item_str) =
+        parse_terminated(" is discarded as no player can use it.").parse(input)?;
     let (_, item) = item.parse(item_str)?;
 
     Ok((input, item))
@@ -1410,18 +1408,31 @@ pub(super) fn feed_event_effloresce(input: &str) -> IResult<'_, &str, &str> {
     parse_terminated(" is Efflorescing and sheds their Corruption!").parse(input)
 }
 
-pub(super) fn feed_event_consumption_contest_specific(input: &str) -> IResult<'_, &str, (Option<u32>, EmojiTeam<&str>, Option<u32>, Option<Item<&str>>)> {
+pub(super) fn feed_event_consumption_contest_specific(
+    input: &str,
+) -> IResult<
+    '_,
+    &str,
+    (
+        Option<u32>,
+        EmojiTeam<&str>,
+        Option<u32>,
+        Option<Item<&str>>,
+    ),
+> {
     alt((
-        feed_event_won_consumption_contest
-            .map(|(t, i)| (None, t, None, Some(i))),
+        feed_event_won_consumption_contest.map(|(t, i)| (None, t, None, Some(i))),
         feed_event_consumption_contest_with_item_and_coin_tied
             .map(|(s, t, c, i)| (Some(s), t, Some(c), i)),
         feed_event_consumption_contest_with_item_and_coin_outright
             .map(|(t, c, i)| (None, t, Some(c), i)),
-    )).parse(input)
+    ))
+    .parse(input)
 }
 
-pub(super) fn feed_event_consumption_contest_with_item_and_coin_outright(input: &str) -> IResult<'_, &str, (EmojiTeam<&str>, u32, Option<Item<&str>>)> {
+pub(super) fn feed_event_consumption_contest_with_item_and_coin_outright(
+    input: &str,
+) -> IResult<'_, &str, (EmojiTeam<&str>, u32, Option<Item<&str>>)> {
     let (input, team_emoji_name) = parse_terminated(" received 🪙 ").parse(input)?;
     let (_, team) = emoji_team_eof.parse(team_emoji_name)?;
 
@@ -1435,7 +1446,9 @@ pub(super) fn feed_event_consumption_contest_with_item_and_coin_outright(input: 
     Ok((input, (team, coins_received, item)))
 }
 
-pub(super) fn feed_event_won_consumption_contest(input: &str) -> IResult<'_, &str, (EmojiTeam<&str>, Item<&str>)> {
+pub(super) fn feed_event_won_consumption_contest(
+    input: &str,
+) -> IResult<'_, &str, (EmojiTeam<&str>, Item<&str>)> {
     let (input, team_emoji_name) = parse_terminated(" win a ").parse(input)?;
     let (_, team) = emoji_team_eof.parse(team_emoji_name)?;
 
@@ -1446,8 +1459,11 @@ pub(super) fn feed_event_won_consumption_contest(input: &str) -> IResult<'_, &st
     Ok((input, (team, item)))
 }
 
-pub(super) fn feed_event_consumption_contest_with_item_and_coin_tied(input: &str) -> IResult<'_, &str, (u32, EmojiTeam<&str>, u32, Option<Item<&str>>)> {
-    let (input, team_emoji_name) = parse_terminated(" tied the Consumption Contest with ").parse(input)?;
+pub(super) fn feed_event_consumption_contest_with_item_and_coin_tied(
+    input: &str,
+) -> IResult<'_, &str, (u32, EmojiTeam<&str>, u32, Option<Item<&str>>)> {
+    let (input, team_emoji_name) =
+        parse_terminated(" tied the Consumption Contest with ").parse(input)?;
     let (_, team) = emoji_team_eof.parse(team_emoji_name)?;
     let (input, score) = u32.parse(input)?;
 
@@ -1510,7 +1526,7 @@ fn bench_slot_with_num(input: &str) -> IResult<'_, &str, BenchSlot> {
         preceded(tag("Bench Batter #"), u8).map(BenchSlot::Batter),
         preceded(tag("Bench Pitcher #"), u8).map(BenchSlot::Pitcher),
     ))
-        .parse(input)
+    .parse(input)
 }
 
 pub fn training(input: &str) -> IResult<'_, &str, BenchSlot> {
@@ -1586,7 +1602,8 @@ pub(super) fn players_election_swapped(input: &str) -> IResult<'_, &str, ([&str;
 }
 
 pub(super) fn team_election_purified(input: &str) -> IResult<'_, &str, (EmojiTeam<&str>, u32)> {
-    let (input, emoji_team) = parse_terminated(" Purified their roster, cleansing ").parse(input)?;
+    let (input, emoji_team) =
+        parse_terminated(" Purified their roster, cleansing ").parse(input)?;
     let (_, team) = emoji_team_eof.parse(emoji_team)?;
 
     let (input, players_cleansed) = u32.parse(input)?;
@@ -1775,7 +1792,8 @@ fn deflected_falling_star_harmlessly(input: &str) -> IResult<'_, &str, &str> {
 }
 
 pub(super) fn restyle(input: &str) -> IResult<'_, &str, (&str, &str)> {
-    let (input, former_name) = parse_terminated(" visited the Restylist Salon and emerged as ").parse(input)?;
+    let (input, former_name) =
+        parse_terminated(" visited the Restylist Salon and emerged as ").parse(input)?;
     let (input, new_name) = parse_terminated(" with fresh tastes.").parse(input)?;
 
     Ok((input, (former_name, new_name)))
@@ -1811,7 +1829,9 @@ pub(super) fn player_reflected(input: &str) -> IResult<'_, &str, (&str, &str, &s
     Ok((input, (new_name, old_name, replacement_name)))
 }
 
-pub(super) fn boon_recombobulated(input: &str) -> IResult<'_, &str, (&str, ModificationType, ModificationType)> {
+pub(super) fn boon_recombobulated(
+    input: &str,
+) -> IResult<'_, &str, (&str, ModificationType, ModificationType)> {
     let (input, player_name) = parse_terminated(" used the Boon Recombobulator. ").parse(input)?;
     let (input, old_boon_name) = parse_terminated(" was swapped for ").parse(input)?;
     let old_boon = ModificationType::new(old_boon_name);
@@ -1989,15 +2009,15 @@ pub(super) fn player_greater_augment_mod(
     input: &str,
 ) -> IResult<'_, &str, (&str, ModificationType, &str)> {
     let (input, player_name) = parse_terminated(" gained ").parse(input)?;
-    let (input, modification) = parse_terminated(" via ").map(ModificationType::new).parse(input)?;
+    let (input, modification) = parse_terminated(" via ")
+        .map(ModificationType::new)
+        .parse(input)?;
     let (input, augment_name) = parse_until_period_eof.parse(input)?;
 
     Ok((input, (player_name, modification, augment_name)))
 }
 
-pub(super) fn players_became_friends(
-    input: &str,
-) -> IResult<'_, &str, [&str; 2]> {
+pub(super) fn players_became_friends(input: &str) -> IResult<'_, &str, [&str; 2]> {
     let (input, player1_name) = parse_terminated(" became Friends with ").parse(input)?;
     let (input, player2_name) = parse_until_period_eof.parse(input)?;
 

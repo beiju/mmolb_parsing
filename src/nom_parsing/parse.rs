@@ -1,3 +1,34 @@
+use super::{
+    shared::{
+        all_consuming_sentence_and, base_steal_sentence, bold, destination, emoji_team_eof,
+        exclamation, fair_ball_type_verb_name, fielders_eof, fly_ball_type_verb_name,
+        now_batting_stats, ordinal_suffix, out, parse_and, parse_terminated, placed_player_eof,
+        score_update, scores_and_advances, scores_sentence, sentence, sentence_eof, verify_name,
+    },
+    ParsingContext,
+};
+use crate::enums::Place;
+use crate::nom_parsing::shared::{
+    double_trouble, efflorescences, either_team_emoji, failed_ejection_tail,
+    parse_until_exclamation_point_eof, parse_until_period_eof, side_team, swept_away, wither,
+    IResult,
+};
+use crate::parsed_event::{
+    BasicPitcherSwap, ContainResult, PartyDurabilityLoss, PlacedPlayer, WitherResult,
+};
+use crate::{
+    enums::{EventType, GameOverMessage, HomeAway, MoundVisitType, NowBattingStats},
+    game::Event,
+    nom_parsing::shared::{
+        aurora, cheer, delivery, ejection, team_emoji, try_from_word, try_from_words_m_n, MyParser,
+    },
+    parsed_event::{
+        EmojiTeam, FallingStarOutcome, FieldingAttempt, GameEventParseError, KnownBug,
+        StartOfInningPitcher,
+    },
+    time::Breakpoints,
+    ParsedEventMessage,
+};
 use crate::{
     enums::{FoodName, TopBottom},
     nom_parsing::shared::{
@@ -20,31 +51,6 @@ use nom::{bytes::complete::take_till, character::complete::u32, error::ErrorKind
 use nom::{character::complete::space0, sequence::pair};
 use phf::phf_map;
 use std::str::FromStr;
-use super::{
-    shared::{
-        all_consuming_sentence_and, base_steal_sentence, bold, destination, emoji_team_eof,
-        exclamation, fair_ball_type_verb_name, fielders_eof, fly_ball_type_verb_name,
-        now_batting_stats, ordinal_suffix, out, parse_and, parse_terminated, placed_player_eof,
-        score_update, scores_and_advances, scores_sentence, sentence, sentence_eof, verify_name,
-    },
-    ParsingContext,
-};
-use crate::nom_parsing::shared::{double_trouble, efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, side_team, swept_away, wither, IResult};
-use crate::parsed_event::{BasicPitcherSwap, ContainResult, PartyDurabilityLoss, PlacedPlayer, WitherResult};
-use crate::{
-    enums::{EventType, GameOverMessage, HomeAway, MoundVisitType, NowBattingStats},
-    game::Event,
-    nom_parsing::shared::{
-        aurora, cheer, delivery, ejection, team_emoji, try_from_word, try_from_words_m_n, MyParser,
-    },
-    parsed_event::{
-        EmojiTeam, FallingStarOutcome, FieldingAttempt, GameEventParseError, KnownBug,
-        StartOfInningPitcher,
-    },
-    time::Breakpoints,
-    ParsedEventMessage,
-};
-use crate::enums::Place;
 
 const OVERRIDES: phf::Map<&'static str, phf::Map<u16, ParsedEventMessage<&'static str>>> =
     phf_map!();
@@ -258,10 +264,7 @@ fn party_durability_loss<'parse, 'output: 'parse>(
 
 fn party<'parse, 'output: 'parse>(
 ) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
-    alt((
-        party_for_attributes(),
-        party_for_friends(),
-    ))
+    alt((party_for_attributes(), party_for_friends()))
 }
 
 fn party_for_attributes<'parse, 'output: 'parse>(
@@ -319,15 +322,13 @@ fn party_for_friends<'parse, 'output: 'parse>(
             tag("<strong>🥳 "),
             (
                 parse_terminated(" and ").and_then(verify_name),
-                parse_terminated(" are Partying!</strong> They became Friends!").and_then(verify_name),
+                parse_terminated(" are Partying!</strong> They became Friends!")
+                    .and_then(verify_name),
             ),
         )),
     )
     .map(
-        |(
-            pitcher_name,
-            batter_name,
-        )| ParsedEventMessage::PartyFriendship {
+        |(pitcher_name, batter_name)| ParsedEventMessage::PartyFriendship {
             pitcher_name,
             batter_name,
         },
@@ -337,44 +338,50 @@ fn party_for_friends<'parse, 'output: 'parse>(
 fn balk<'parse, 'output: 'parse>(
     parsing_context: &'parse ParsingContext<'parse>,
 ) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
-    context(
-        "Balk",
-        move |input: &'output str| {
-            let Some(pitcher) = parsing_context.pitcher_name else {
-                return fail().parse(input);
-            };
+    context("Balk", move |input: &'output str| {
+        let Some(pitcher) = parsing_context.pitcher_name else {
+            return fail().parse(input);
+        };
 
-            let (input, _) = tag("Balk. ").parse(input)?;
-            // Re-bind `pitcher` to get an instance of it with the right lifetime
-            let (input, pitcher) = tag(pitcher).parse(input)?;
-            let (input, _) = tag(" ").parse(input)?;
-            let (input, (balk_reason, (scores, advances))) = if parsing_context.after(Breakpoints::Season11) && parsing_context.before(Breakpoints::Season11BalkMessageFix) {
-                let (input, balk_reason) = tag("dropped the ball..").parse(input)?;
-                let (input, scores_advances) = scores_and_advances.parse(input)?;
-                // Need to chop off the last period. We know the length of the string will always be the same.
-                (input, (&balk_reason[..17], scores_advances))
-            } else {
-                alt((
-                    // Has to be hard-coded because all_consuming_sentence_and has no chance
-                    pair(tag("hit a sick 720. Where did they get a skateboard.."), preceded(tag("."), scores_and_advances)),
-                    // This is semi-robust to balk messages with periods, but it can still be tripped
-                    // up by something like "was distracted by Mr. Peanut. A. Player to second base."
-                    // Without knowledge of either what the balk messages are (would require constant
-                    // manual updates) or what the baserunner names are (doable but not implemented yet)
-                    // it's impossible to parse that correctly in the general case.
-                    all_consuming_sentence_and(rest, scores_and_advances)
-                )).parse(input)?
-            };
+        let (input, _) = tag("Balk. ").parse(input)?;
+        // Re-bind `pitcher` to get an instance of it with the right lifetime
+        let (input, pitcher) = tag(pitcher).parse(input)?;
+        let (input, _) = tag(" ").parse(input)?;
+        let (input, (balk_reason, (scores, advances))) = if parsing_context
+            .after(Breakpoints::Season11)
+            && parsing_context.before(Breakpoints::Season11BalkMessageFix)
+        {
+            let (input, balk_reason) = tag("dropped the ball..").parse(input)?;
+            let (input, scores_advances) = scores_and_advances.parse(input)?;
+            // Need to chop off the last period. We know the length of the string will always be the same.
+            (input, (&balk_reason[..17], scores_advances))
+        } else {
+            alt((
+                // Has to be hard-coded because all_consuming_sentence_and has no chance
+                pair(
+                    tag("hit a sick 720. Where did they get a skateboard.."),
+                    preceded(tag("."), scores_and_advances),
+                ),
+                // This is semi-robust to balk messages with periods, but it can still be tripped
+                // up by something like "was distracted by Mr. Peanut. A. Player to second base."
+                // Without knowledge of either what the balk messages are (would require constant
+                // manual updates) or what the baserunner names are (doable but not implemented yet)
+                // it's impossible to parse that correctly in the general case.
+                all_consuming_sentence_and(rest, scores_and_advances),
+            ))
+            .parse(input)?
+        };
 
-
-            Ok((input, ParsedEventMessage::Balk {
+        Ok((
+            input,
+            ParsedEventMessage::Balk {
                 pitcher,
                 balk_reason,
                 scores,
                 advances,
-            }))
-        },
-    )
+            },
+        ))
+    })
 }
 
 fn special_delivery<'parse, 'output: 'parse>(
@@ -452,14 +459,16 @@ fn weather_prosperity<'parse, 'output: 'parse>(
         "Weather Prosperity",
         all_consuming(alt((
             variations,
-            end_game_tokens_inner.map(|(winning_team, winning_team_income, losing_team, losing_team_income)| {
-               ParsedEventMessage::WeatherProsperityS13 {
-                   winning_team,
-                   winning_team_income,
-                   losing_team,
-                   losing_team_income,
-               }
-            }),
+            end_game_tokens_inner.map(
+                |(winning_team, winning_team_income, losing_team, losing_team_income)| {
+                    ParsedEventMessage::WeatherProsperityS13 {
+                        winning_team,
+                        winning_team_income,
+                        losing_team,
+                        losing_team_income,
+                    }
+                },
+            ),
             value(
                 ParsedEventMessage::KnownBug {
                     bug: KnownBug::NoOneProspers,
@@ -637,18 +646,25 @@ fn now_batting<'output>() -> impl MyParser<'output, ParsedEventMessage<&'output 
                 terminated(now_batting_stats, tag(")")),
                 opt(preceded(tag(" "), swept_away)),
             )
-                .map(|(batter, stats, player_swept_away)| ParsedEventMessage::NowBatting { batter, stats, player_swept_away }),
+                .map(|(batter, stats, player_swept_away)| {
+                    ParsedEventMessage::NowBatting {
+                        batter,
+                        stats,
+                        player_swept_away,
+                    }
+                }),
             // When there are no stats
             (
                 preceded(tag("Now batting: "), verify_name),
                 opt(preceded(tag(" "), swept_away)),
-            ).map(|(batter, player_swept_away)| {
-                ParsedEventMessage::NowBatting {
-                    batter,
-                    stats: NowBattingStats::NoStats,
-                    player_swept_away,
-                }
-            }),
+            )
+                .map(
+                    |(batter, player_swept_away)| ParsedEventMessage::NowBatting {
+                        batter,
+                        stats: NowBattingStats::NoStats,
+                        player_swept_away,
+                    },
+                ),
         ))),
     )
 }
@@ -908,7 +924,10 @@ fn field<'parse, 'output: 'parse>(
         ),
     )
     .map(
-        |((batter, sacrifice, fielders), (out_one, out_two, (scores, advances), ejection, double_trouble))| {
+        |(
+            (batter, sacrifice, fielders),
+            (out_one, out_two, (scores, advances), ejection, double_trouble),
+        )| {
             ParsedEventMessage::DoublePlayGrounded {
                 batter,
                 fielders,
@@ -1134,9 +1153,15 @@ fn pitch<'parse, 'output: 'parse>(
         .and(opt(wither(parsing_context)))
         .and(efflorescences)
         .map(
-            |((
+            |(
                 (
-                    (((((strike, (count, steals)), aurora_photos), surprise_strike), cheer), ejection), door_prizes),
+                    (
+                        (
+                            ((((strike, (count, steals)), aurora_photos), surprise_strike), cheer),
+                            ejection,
+                        ),
+                        door_prizes,
+                    ),
                     wither,
                 ),
                 efflorescence,
@@ -1239,10 +1264,18 @@ fn lineup<'output>(side: HomeAway) -> impl MyParser<'output, ParsedEventMessage<
                 (digit1, tag(". ")),
                 take_until("<br>").and_then(placed_player_eof),
                 tag("<br>"),
-            )).parse(input)?;
+            ))
+            .parse(input)?;
 
-            Ok((input, ParsedEventMessage::Lineup { side, manager_name, players }))
-        })
+            Ok((
+                input,
+                ParsedEventMessage::Lineup {
+                    side,
+                    manager_name,
+                    players,
+                },
+            ))
+        }),
     )
 }
 
@@ -1292,32 +1325,44 @@ fn inning_start<'parse, 'output: 'parse>(
 
         let preempting_pitcher = move |input| {
             let (input, _) = tag(" ").parse(input)?;
-            let (input, leaving_placed_pitcher) = parse_terminated(" is leaving the game. ").parse(input)?;
+            let (input, leaving_placed_pitcher) =
+                parse_terminated(" is leaving the game. ").parse(input)?;
             let (_, leaving_pitcher) = placed_player_eof.parse(leaving_placed_pitcher)?;
             let (input, _) = pitching_team_emoji.parse(input)?;
             let (input, _) = tag(" ").parse(input)?;
-            let (input, arriving_placed_pitcher) = parse_terminated(" takes the mound.").parse(input)?;
+            let (input, arriving_placed_pitcher) =
+                parse_terminated(" takes the mound.").parse(input)?;
             let (_, arriving_pitcher) = placed_player_eof.parse(arriving_placed_pitcher)?;
 
-            Ok((input, BasicPitcherSwap {
-                leaving_pitcher,
-                arriving_pitcher,
-            }))
+            Ok((
+                input,
+                BasicPitcherSwap {
+                    leaving_pitcher,
+                    arriving_pitcher,
+                },
+            ))
         };
 
         let flooded_pitcher = move |input| {
             let (input, _) = tag(" ").parse(input)?;
             let (input, _) = pitching_emoji_team.parse(input)?;
             let (input, _) = tag(" ").parse(input)?;
-            let (input, incoming_pitcher_name) = parse_terminated(" pitching. ").and_then(verify_name).parse(input)?;
-            let (input, swept_pitcher_name) = parse_terminated(" was swept away in the 🌊 Flood!").and_then(verify_name).parse(input)?;
+            let (input, incoming_pitcher_name) = parse_terminated(" pitching. ")
+                .and_then(verify_name)
+                .parse(input)?;
+            let (input, swept_pitcher_name) = parse_terminated(" was swept away in the 🌊 Flood!")
+                .and_then(verify_name)
+                .parse(input)?;
             let (input, preemption) = opt(preempting_pitcher).parse(input)?;
 
-            Ok((input, StartOfInningPitcher::Flooded {
-                swept_pitcher_name,
-                incoming_pitcher_name,
-                preemption,
-            }))
+            Ok((
+                input,
+                StartOfInningPitcher::Flooded {
+                    swept_pitcher_name,
+                    incoming_pitcher_name,
+                    preemption,
+                },
+            ))
         };
 
         let mut start_inning = |input| {
@@ -1363,7 +1408,8 @@ fn inning_start<'parse, 'output: 'parse>(
 //   "mound visit" or "pitching change" as a parameter
 fn parse_mound_visit_basic(input: &str) -> IResult<'_, &str, EmojiTeam<&str>> {
     let (input, _) = tag("The ").parse(input)?;
-    let (input, emoji_team_str) = parse_terminated(" manager is making a mound visit.").parse(input)?;
+    let (input, emoji_team_str) =
+        parse_terminated(" manager is making a mound visit.").parse(input)?;
     let (_, emoji_team) = emoji_team_eof.parse(emoji_team_str)?;
     Ok((input, emoji_team))
 }
@@ -1379,12 +1425,15 @@ fn parse_mound_visit_basic_with_manager(input: &str) -> IResult<'_, &str, (&str,
 
 fn parse_mound_visit_pitching_change(input: &str) -> IResult<'_, &str, EmojiTeam<&str>> {
     let (input, _) = tag("The ").parse(input)?;
-    let (input, emoji_team_str) = parse_terminated(" manager is making a pitching change.").parse(input)?;
+    let (input, emoji_team_str) =
+        parse_terminated(" manager is making a pitching change.").parse(input)?;
     let (_, emoji_team) = emoji_team_eof.parse(emoji_team_str)?;
     Ok((input, emoji_team))
 }
 
-fn parse_mound_visit_pitching_change_with_manager(input: &str) -> IResult<'_, &str, (&str, EmojiTeam<&str>)> {
+fn parse_mound_visit_pitching_change_with_manager(
+    input: &str,
+) -> IResult<'_, &str, (&str, EmojiTeam<&str>)> {
     let (input, _) = tag("Manager ").parse(input)?;
     // Nobody submit the name "of the" please
     let (input, manager_name) = parse_terminated(" of the ").parse(input)?;
@@ -1396,10 +1445,13 @@ fn parse_mound_visit_pitching_change_with_manager(input: &str) -> IResult<'_, &s
 fn parse_mound_visit_pitcher_swap<'parse, 'output: 'parse>(
     event: &'output Event,
     parsing_context: &'parse ParsingContext<'parse>,
-) -> impl MyParser<'output, (
-    (Option<&'output str>, PlacedPlayer<&'output str>),
-    (Option<&'output str>, (Option<Place>, &'output str)),
-)> + 'parse {
+) -> impl MyParser<
+    'output,
+    (
+        (Option<&'output str>, PlacedPlayer<&'output str>),
+        (Option<&'output str>, (Option<Place>, &'output str)),
+    ),
+> + 'parse {
     let leaves_player = |i| {
         if parsing_context.before(Breakpoints::S2D152) {
             (terminated(try_from_word, tag(" ")), verify_name)
@@ -1439,20 +1491,24 @@ fn mound_visit<'parse, 'output: 'parse>(
             team,
             mound_visit_type: MoundVisitType::MoundVisit,
         }),
-        parse_mound_visit_basic_with_manager.map(|(manager_name, team)| ParsedEventMessage::MoundVisit {
-            manager_name: Some(manager_name),
-            team,
-            mound_visit_type: MoundVisitType::MoundVisit,
+        parse_mound_visit_basic_with_manager.map(|(manager_name, team)| {
+            ParsedEventMessage::MoundVisit {
+                manager_name: Some(manager_name),
+                team,
+                mound_visit_type: MoundVisitType::MoundVisit,
+            }
         }),
         parse_mound_visit_pitching_change.map(|team| ParsedEventMessage::MoundVisit {
             manager_name: None,
             team,
             mound_visit_type: MoundVisitType::PitchingChange,
         }),
-        parse_mound_visit_pitching_change_with_manager.map(|(manager_name, team)| ParsedEventMessage::MoundVisit {
-            manager_name: Some(manager_name),
-            team,
-            mound_visit_type: MoundVisitType::PitchingChange,
+        parse_mound_visit_pitching_change_with_manager.map(|(manager_name, team)| {
+            ParsedEventMessage::MoundVisit {
+                manager_name: Some(manager_name),
+                team,
+                mound_visit_type: MoundVisitType::PitchingChange,
+            }
         }),
         parse_mound_visit_pitcher_swap(event, parsing_context).map(
             |(
@@ -1919,7 +1975,9 @@ fn weather_noisy<'parse, 'output: 'parse>(
     context("Weather Simulacrum", f)
 }
 
-fn end_game_tokens_inner(input: &str) -> IResult<'_, &str, (EmojiTeam<&str>, u32, EmojiTeam<&str>, u32)> {
+fn end_game_tokens_inner(
+    input: &str,
+) -> IResult<'_, &str, (EmojiTeam<&str>, u32, EmojiTeam<&str>, u32)> {
     let (input, winning_emoji_team) = parse_terminated(" earned ").parse(input)?;
     let (_, winning_team) = emoji_team_eof(winning_emoji_team)?;
     let (input, winning_team_income) = u32.parse(input)?;
@@ -1944,12 +2002,8 @@ fn end_game_tokens_inner(input: &str) -> IResult<'_, &str, (EmojiTeam<&str>, u32
 fn end_game_tokens<'parse, 'output: 'parse>(
 ) -> impl MyParser<'output, ParsedEventMessage<&'output str>> + 'parse {
     context("End game tokens", |input| {
-        let (input, (
-            winning_team,
-            winning_team_income,
-            losing_team,
-            losing_team_income,
-        )) = end_game_tokens_inner.parse(input)?;
+        let (input, (winning_team, winning_team_income, losing_team, losing_team_income)) =
+            end_game_tokens_inner.parse(input)?;
 
         Ok((
             input,

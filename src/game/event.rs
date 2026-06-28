@@ -3,7 +3,12 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
 use crate::utils::MaybeRecognizedHelper;
-use crate::{enums::{EventType, Inning}, game::{EventBatterVersions, EventPitcherVersions, Pitch}, utils::{extra_fields_deserialize, MaybeRecognizedResult, NonStringOrEmptyString}, AddedLaterResult};
+use crate::{
+    enums::{EventType, Inning},
+    game::{EventBatterVersions, EventPitcherVersions, Pitch},
+    utils::{extra_fields_deserialize, MaybeRecognizedResult, NonStringOrEmptyString},
+    AddedLaterResult,
+};
 
 #[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

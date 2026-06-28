@@ -374,7 +374,7 @@ pub enum ParsedEventMessage<S> {
     PartyFriendship {
         pitcher_name: S,
         batter_name: S,
-    }
+    },
 }
 
 impl<S> ParsedEventMessage<S> {
@@ -485,7 +485,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
-    
+
     pub fn scores(&self) -> Option<&Vec<S>> {
         match self {
             ParsedEventMessage::ParseError { .. } => None,
@@ -539,7 +539,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
-    
+
     pub fn cheer(&self) -> Option<&Cheer> {
         match self {
             ParsedEventMessage::ParseError { .. } => None,
@@ -593,7 +593,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
-    
+
     pub fn aurora_photos(&self) -> Option<&SnappedPhotos<S>> {
         match self {
             ParsedEventMessage::ParseError { .. } => None,
@@ -647,7 +647,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
-    
+
     pub fn ejection(&self) -> Option<&Ejection<S>> {
         match self {
             ParsedEventMessage::ParseError { .. } => None,
@@ -701,7 +701,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
-    
+
     pub fn door_prizes(&self) -> Option<&Vec<DoorPrize<S>>> {
         match self {
             ParsedEventMessage::ParseError { .. } => None,
@@ -755,7 +755,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
-    
+
     pub fn wither(&self) -> Option<&WitherStruggle<S>> {
         match self {
             ParsedEventMessage::ParseError { .. } => None,
@@ -809,7 +809,7 @@ impl<S> ParsedEventMessage<S> {
             ParsedEventMessage::PartyFriendship { .. } => None,
         }
     }
-    
+
     pub fn efflorescence(&self) -> Option<&Vec<Efflorescence<S>>> {
         match self {
             ParsedEventMessage::ParseError { .. } => None,
@@ -889,14 +889,19 @@ impl<S: Display> ParsedEventMessage<S> {
                 home_pitcher,
                 away_pitcher,
             } => format!("{away_team} {away_pitcher} vs. {home_team} {home_pitcher}"),
-            Self::Lineup { side: _, manager_name, players } => {
-                let players_str = players
-                    .iter()
-                    .enumerate()
-                    .fold(String::new(), |mut acc, (index, player)| {
-                        let _ = write!(acc, "{}. {player}<br>", index + 1);
-                        acc
-                    });
+            Self::Lineup {
+                side: _,
+                manager_name,
+                players,
+            } => {
+                let players_str =
+                    players
+                        .iter()
+                        .enumerate()
+                        .fold(String::new(), |mut acc, (index, player)| {
+                            let _ = write!(acc, "{}. {player}<br>", index + 1);
+                            acc
+                        });
                 if let Some(manager_name) = manager_name {
                     format!("Manager: {manager_name}<br>{players_str}")
                 } else {
@@ -953,10 +958,10 @@ impl<S: Display> ParsedEventMessage<S> {
                         format!(" {leaving_emoji}{leaving_pitcher} is leaving the game. {arriving_emoji}{arriving_pitcher} takes the mound.")
                     }
                     Some(StartOfInningPitcher::Flooded {
-                             swept_pitcher_name,
-                             incoming_pitcher_name,
-                             preemption,
-                         }) => {
+                        swept_pitcher_name,
+                        incoming_pitcher_name,
+                        preemption,
+                    }) => {
                         let preemption = preemption.as_ref()
                             .map_or_else(String::new, |BasicPitcherSwap { leaving_pitcher, arriving_pitcher }| {
                                format!(
@@ -984,7 +989,11 @@ impl<S: Display> ParsedEventMessage<S> {
                 };
                 format!("Start of the {side} of the {ordinal}. {batting_team} batting.{automatic_runner}{pitcher_message}")
             }
-            Self::NowBatting { batter, stats, player_swept_away } => {
+            Self::NowBatting {
+                batter,
+                stats,
+                player_swept_away,
+            } => {
                 let stats = match stats {
                     NowBattingStats::FirstPA => " (1st PA of game)".to_string(),
                     NowBattingStats::Stats(stats) => {
@@ -999,8 +1008,10 @@ impl<S: Display> ParsedEventMessage<S> {
                     }
                     NowBattingStats::NoStats => String::new(),
                 };
-                let player_swept_away = player_swept_away.as_ref()
-                    .map_or(String::new(), |player| format!(" <br>{player} was swept away in the 🌊 Flood!"));
+                let player_swept_away =
+                    player_swept_away.as_ref().map_or(String::new(), |player| {
+                        format!(" <br>{player} was swept away in the 🌊 Flood!")
+                    });
 
                 format!("Now batting: {batter}{stats}{player_swept_away}")
             }
@@ -1034,7 +1045,7 @@ impl<S: Display> ParsedEventMessage<S> {
                 } else {
                     format!("The {team} manager is making a {type_str}.")
                 }
-            },
+            }
             Self::PitcherRemains { remaining_pitcher } => {
                 format!("{remaining_pitcher} remains in the game.")
             }
@@ -1473,9 +1484,9 @@ impl<S: Display> ParsedEventMessage<S> {
                 } else {
                     String::new()
                 };
-                let double_trouble = double_trouble
-                    .as_ref()
-                    .map_or(String::new(), |player| format!(" {player} caused ‼️ Double Trouble!"));
+                let double_trouble = double_trouble.as_ref().map_or(String::new(), |player| {
+                    format!(" {player} caused ‼️ Double Trouble!")
+                });
 
                 let verb = if Breakpoints::Season5TenseChange.before(
                     context.season,
@@ -1729,15 +1740,30 @@ impl<S: Display> ParsedEventMessage<S> {
                 ump_team,
                 tokens_earnt,
             } => {
-                format!("{player_team} were defeated by the {ump_team} and earned {tokens_earnt} 🪙.")
+                format!(
+                    "{player_team} were defeated by the {ump_team} and earned {tokens_earnt} 🪙."
+                )
             }
-            Self::EndGameIncome { winning_team, winning_team_income, losing_team, losing_team_income } => {
+            Self::EndGameIncome {
+                winning_team,
+                winning_team_income,
+                losing_team,
+                losing_team_income,
+            } => {
                 format!("{winning_team} earned {winning_team_income} 🪙. {losing_team} earned {losing_team_income} 🪙.")
             }
-            Self::WeatherProsperityS13 { winning_team, winning_team_income, losing_team, losing_team_income } => {
+            Self::WeatherProsperityS13 {
+                winning_team,
+                winning_team_income,
+                losing_team,
+                losing_team_income,
+            } => {
                 format!("{winning_team} earned {winning_team_income} 🪙. {losing_team} earned {losing_team_income} 🪙.")
             }
-            Self::PartyFriendship { pitcher_name, batter_name } => {
+            Self::PartyFriendship {
+                pitcher_name,
+                batter_name,
+            } => {
                 format!("<strong>🥳 {pitcher_name} and {batter_name} are Partying!</strong> They became Friends!")
             }
         }
@@ -1804,7 +1830,7 @@ pub enum StartOfInningPitcher<S> {
         // It's possible for a flood event to replace a pitcher and then the
         // closer logic to replace THAT pitcher. That's what this field is for
         preemption: Option<BasicPitcherSwap<S>>,
-    }
+    },
 }
 
 /// Either an Out or an Error - e.g. for a Fielder's Choice.

@@ -1,12 +1,14 @@
 use crate::nom_parsing::shared::PurifiedOutcome;
-use std::fmt::{Display};
+use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
+use crate::enums::{DurabilityType, Slot};
 use crate::feed_event::PlayerGreaterAugment;
 pub use crate::nom_parsing::parse_player_feed_event::parse_player_feed_event;
 use crate::nom_parsing::shared::{FeedEventDoorPrize, FeedEventParty, Grow, PositionSwap};
+use crate::parsed_event::{EmojiTeam, GrowAttributeChange, Item};
 use crate::{
     enums::{Attribute, FeedEventType, ModificationType},
     feed_event::{
@@ -15,8 +17,6 @@ use crate::{
     time::{Breakpoints, Timestamp},
     utils::extra_fields_deserialize,
 };
-use crate::enums::{DurabilityType, Slot};
-use crate::parsed_event::{EmojiTeam, GrowAttributeChange, Item};
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -221,7 +221,7 @@ pub enum ParsedPlayerFeedEventText<S> {
     },
     PlayersBecameFriends {
         player_names: [S; 2],
-    }
+    },
 }
 
 impl<S: Display> ParsedPlayerFeedEventText<S> {

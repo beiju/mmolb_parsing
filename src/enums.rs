@@ -1665,10 +1665,8 @@ impl FromStr for BenchSlot {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         alt((
-            preceded(tag("B"), u8::<&str, nom::error::Error<&str>>)
-                .map(BenchSlot::Batter),
-            preceded(tag("P"), u8::<&str, nom::error::Error<&str>>)
-                .map(BenchSlot::Pitcher),
+            preceded(tag("B"), u8::<&str, nom::error::Error<&str>>).map(BenchSlot::Batter),
+            preceded(tag("P"), u8::<&str, nom::error::Error<&str>>).map(BenchSlot::Pitcher),
         ))
         .parse(s)
         .map(|(_, o)| o)
@@ -1913,11 +1911,11 @@ impl TryFrom<Attribute> for AttributeCategory {
             | Attribute::Cunning
             | Attribute::Selflessness
             | Attribute::Determination
-            | Attribute::Wisdom 
+            | Attribute::Wisdom
             | Attribute::Insight
             | Attribute::Aiming
             | Attribute::Lift => Ok(AttributeCategory::Batting),
-            Attribute::Performance | Attribute::Speed | Attribute::Greed |  Attribute::Stealth => {
+            Attribute::Performance | Attribute::Speed | Attribute::Greed | Attribute::Stealth => {
                 Ok(AttributeCategory::Baserunning)
             }
             Attribute::Control

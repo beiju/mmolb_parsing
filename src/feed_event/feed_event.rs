@@ -1,8 +1,12 @@
-use crate::utils::SometimesMissingHelper;
 use crate::time::Breakpoints;
-use crate::{enums::{CelestialEnergyTier, Day, FeedEventType, LinkType, SeasonStatus}, utils::{
-    extra_fields_deserialize, MaybeRecognizedHelper, MaybeRecognizedResult, TimestampHelper,
-}, AddedLaterResult};
+use crate::utils::SometimesMissingHelper;
+use crate::{
+    enums::{CelestialEnergyTier, Day, FeedEventType, LinkType, SeasonStatus},
+    utils::{
+        extra_fields_deserialize, MaybeRecognizedHelper, MaybeRecognizedResult, TimestampHelper,
+    },
+    AddedLaterResult,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;

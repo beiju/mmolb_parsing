@@ -191,7 +191,9 @@ impl EventBatterVersions<String> {
     pub fn map_as_str(&self) -> EventBatterVersions<&str> {
         match self {
             EventBatterVersions::New(batter) => EventBatterVersions::New(batter.map_as_str()),
-            EventBatterVersions::Old(batter) => crate::game::EventBatterVersions::Old(batter.map_as_str()),
+            EventBatterVersions::Old(batter) => {
+                crate::game::EventBatterVersions::Old(batter.map_as_str())
+            }
         }
     }
 }

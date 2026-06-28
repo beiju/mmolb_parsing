@@ -4,15 +4,15 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
 use super::team::TeamPlayer;
+use crate::player::{BoonCollection, FoodBuff, Modification, PendingLevelUp};
 use crate::utils::{MaybeRecognizedHelper, SometimesMissingHelper};
 use crate::{
-    enums::{GameStat, PositionType, BenchRole, FullSlot, FullSlotLabel, SlotType},
+    enums::{BenchRole, FullSlot, FullSlotLabel, GameStat, PositionType, SlotType},
     utils::{
         extra_fields_deserialize, maybe_recognized_from_str, AddedLaterResult,
         MaybeRecognizedResult,
     },
 };
-use crate::player::{BoonCollection, FoodBuff, Modification, PendingLevelUp};
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -83,7 +83,6 @@ pub(crate) struct RawTeamPlayer {
     )]
     #[serde_as(as = "SometimesMissingHelper<_>")]
     pub food_buffs: AddedLaterResult<Vec<FoodBuff>>,
-
 
     #[serde(
         default = "SometimesMissingHelper::default_result",

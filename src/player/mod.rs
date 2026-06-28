@@ -1,12 +1,11 @@
+use crate::enums::{
+    AttributeCategory, EquipmentEffectPhase, ImplicitEquipmentEffectSource, PitchCategory,
+    PitchType,
+};
 use crate::utils::PitchTypeFromAcronym;
-pub use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
-use std::collections::HashMap;
-use chrono::{DateTime, Utc};
-use strum::{Display, EnumIter, EnumString, IntoStaticStr};
-use uuid::Uuid;
-use crate::enums::{AttributeCategory, EquipmentEffectPhase, ImplicitEquipmentEffectSource, PitchCategory, PitchType};
-use crate::utils::{extra_fields_deserialize, MaybeRecognizedHelper, SometimesMissingHelper, TimestampHelper};
+use crate::utils::{
+    extra_fields_deserialize, MaybeRecognizedHelper, SometimesMissingHelper, TimestampHelper,
+};
 use crate::{
     enums::{
         Attribute, Day, EquipmentEffectType, EquipmentRarity, EquipmentSlot, GameStat, Handedness,
@@ -19,6 +18,12 @@ use crate::{
     },
     EmptyArrayOr,
 };
+use chrono::{DateTime, Utc};
+pub use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
+use std::collections::HashMap;
+use strum::{Display, EnumIter, EnumString, IntoStaticStr};
+use uuid::Uuid;
 
 // Needed for skip_serializing_if
 fn is_false(b: &bool) -> bool {
@@ -268,15 +273,7 @@ pub struct Player {
 }
 
 #[serde_as]
-#[derive(
-    Debug,
-    Serialize,
-    Deserialize,
-    Clone,
-    PartialEq,
-    IntoStaticStr,
-    Display,
-)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, IntoStaticStr, Display)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum LevelUpChoice {
     Attribute {

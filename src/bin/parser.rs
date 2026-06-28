@@ -345,7 +345,8 @@ fn ingest<T: for<'a> Deserialize<'a> + Serialize>(
         "Entity Ingest",
         entity_id = response.entity_id,
         valid_from = response.valid_from,
-    ).entered();
+    )
+    .entered();
 
     let entity: T = if !args.no_path_to_error {
         let des = response.data.as_ref().into_deserializer();
@@ -695,8 +696,16 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             home_pitcher: _,
             away_pitcher: _,
         } => "".to_string(),
-        ParsedEventMessage::Lineup { side, manager_name, players } => {
-            format!("Side: {side}, manager_name: {}, player_count: {}", manager_name.is_some(), players.len())
+        ParsedEventMessage::Lineup {
+            side,
+            manager_name,
+            players,
+        } => {
+            format!(
+                "Side: {side}, manager_name: {}, player_count: {}",
+                manager_name.is_some(),
+                players.len()
+            )
         }
         ParsedEventMessage::PlayBall => "".to_string(),
         ParsedEventMessage::GameOver { message } => format!("Message: {message}"),
@@ -719,8 +728,16 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
                 pitcher_status.as_ref().map(|status| status.discriminant())
             )
         }
-        ParsedEventMessage::NowBatting { batter: _, stats, player_swept_away } => {
-            format!("stats: {}, player_swept_away: {}", stats.discriminant(), player_swept_away.is_some())
+        ParsedEventMessage::NowBatting {
+            batter: _,
+            stats,
+            player_swept_away,
+        } => {
+            format!(
+                "stats: {}, player_swept_away: {}",
+                stats.discriminant(),
+                player_swept_away.is_some()
+            )
         }
         ParsedEventMessage::InningEnd { number, side } => {
             format!("number: {number}, side: {side}")
@@ -730,7 +747,11 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             team: _,
             mound_visit_type,
         } => {
-            format!("manager_name: {}, type: {}", manager_name.is_some(), mound_visit_type)
+            format!(
+                "manager_name: {}, type: {}",
+                manager_name.is_some(),
+                mound_visit_type
+            )
         }
         ParsedEventMessage::PitcherRemains {
             remaining_pitcher: _,
