@@ -1165,6 +1165,8 @@ pub enum GameStat {
     FloodedPlateRisp,
     FloodedMound,
     Robberies,
+    Removals,
+    RemovalsRisp,
 }
 
 #[derive(

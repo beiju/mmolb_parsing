@@ -4,10 +4,7 @@ use crate::enums::{
 };
 use crate::feed_event::FeedFallingStarOutcome;
 use crate::game::EventPitcherVersions;
-use crate::parsed_event::{
-    Efflorescence, EfflorescenceOutcome, EjectionReplacement, EmojiFood, EmojiPlayer, ItemEquip,
-    ItemPrize, WitherStruggle,
-};
+use crate::parsed_event::{Assassination, Efflorescence, EfflorescenceOutcome, EjectionReplacement, EmojiFood, EmojiPlayer, ItemEquip, ItemPrize, WitherStruggle};
 use crate::player::{Deserialize, Serialize};
 use crate::{
     enums::{
@@ -367,6 +364,13 @@ pub(super) fn base_steal_sentence(input: &str) -> IResult<'_, &str, BaseSteal<&s
         home_steal,
     ))
     .parse(input)
+}
+
+pub(super) fn assassination(input: &str) -> IResult<'_, &str, Assassination<&str>> {
+    let (input, victim_name) = parse_terminated(" was 🗡️ Assassinated by ").and_then(verify_name).parse(input)?;
+    let (input, assassin_name) = parse_terminated(" and returned to the dugout! ").and_then(verify_name).parse(input)?;
+
+    Ok((input, Assassination { assassin_name, victim_name }))
 }
 
 pub(super) fn score_update(i: &str) -> IResult<'_, &str, (u8, u8)> {

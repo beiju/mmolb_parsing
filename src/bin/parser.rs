@@ -812,8 +812,9 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             door_prizes,
             wither,
             efflorescence,
+            assassinations,
         } => {
-            format!("foul: {foul}, steals: {}, cheer: {}, aurora_photos: {}, door_prizes: {}, wither: {}, efflorescence: {}", steals.len(), cheer.is_some(), aurora_photos.is_some(), door_prizes.len(), wither.is_some(), efflorescence.len())
+            format!("foul: {foul}, assassinations: {}, steals: {}, cheer: {}, aurora_photos: {}, door_prizes: {}, wither: {}, efflorescence: {}", assassinations.len(), steals.len(), cheer.is_some(), aurora_photos.is_some(), door_prizes.len(), wither.is_some(), efflorescence.len())
         }
         ParsedEventMessage::Walk {
             batter: _,

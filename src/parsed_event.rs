@@ -144,6 +144,7 @@ pub enum ParsedEventMessage<S> {
         door_prizes: Vec<DoorPrize<S>>,
         wither: Option<WitherStruggle<S>>,
         efflorescence: Vec<Efflorescence<S>>,
+        assassinations: Vec<Assassination<S>>,
     },
     Walk {
         batter: S,
@@ -1166,7 +1167,13 @@ impl<S: Display> ParsedEventMessage<S> {
                 door_prizes,
                 wither,
                 efflorescence,
+                assassinations,
             } => {
+                let assassinations: Vec<String> = assassinations.iter()
+                    .map(|ass| ass.unparse())
+                    .chain(once(String::new()))
+                    .collect();
+                let assassinations = assassinations.join(" ");
                 let steals: Vec<String> = once(String::new())
                     .chain(steals.iter().map(|steal| steal.to_string()))
                     .collect();
@@ -1193,7 +1200,7 @@ impl<S: Display> ParsedEventMessage<S> {
                     .collect::<Vec<_>>()
                     .join("<br>🌹 ");
 
-                format!("{space}Foul {foul}. {}-{}.{steals}{aurora_photos}{cheer}{door_prizes}{wither}{efflorescence}", count.0, count.1)
+                format!("{assassinations}{space}Foul {foul}. {}-{}.{steals}{aurora_photos}{cheer}{door_prizes}{wither}{efflorescence}", count.0, count.1)
             }
             Self::Walk {
                 batter,
@@ -3042,6 +3049,31 @@ impl<S: AsRef<str>> Efflorescence<S> {
         Efflorescence {
             player: self.player.as_ref(),
             outcome: self.outcome,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Assassination<S> {
+    pub assassin_name: S,
+    pub victim_name: S,
+}
+
+impl<S: Display> Assassination<S> {
+    pub fn unparse(&self) -> String {
+        format!(
+            "{} was 🗡️ Assassinated by {} and returned to the dugout!",
+            self.victim_name,
+            self.assassin_name,
+        )
+    }
+}
+
+impl<S: AsRef<str>> Assassination<S> {
+    pub fn to_ref(&self) -> Assassination<&str> {
+        Assassination {
+            assassin_name: self.assassin_name.as_ref(),
+            victim_name: self.victim_name.as_ref(),
         }
     }
 }

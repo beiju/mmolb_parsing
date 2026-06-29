@@ -7,11 +7,7 @@ use super::{
     },
     ParsingContext,
 };
-use crate::nom_parsing::shared::{
-    double_trouble, efflorescences, either_team_emoji, failed_ejection_tail,
-    parse_until_exclamation_point_eof, parse_until_period_eof, side_team, swept_away, wither,
-    IResult,
-};
+use crate::nom_parsing::shared::{assassination, double_trouble, efflorescences, either_team_emoji, failed_ejection_tail, parse_until_exclamation_point_eof, parse_until_period_eof, side_team, swept_away, wither, IResult};
 use crate::parsed_event::{
     BasicPitcherSwap, ContainResult, PartyDurabilityLoss, PlacedPlayer, WitherResult,
 };
@@ -1190,7 +1186,8 @@ fn pitch<'parse, 'output: 'parse>(
             },
         );
 
-    let foul = sentence(preceded(tag("Foul "), try_from_word))
+    let foul = many0(assassination)
+        .and(sentence(preceded(tag("Foul "), try_from_word)))
         .and(sentence(score_update))
         .and(many0(base_steal_sentence))
         .and(opt(preceded(tag(" "), aurora(parsing_context))))
@@ -1200,7 +1197,7 @@ fn pitch<'parse, 'output: 'parse>(
         .and(efflorescences)
         .map(
             |(
-                ((((((foul, count), steals), aurora_photos), cheer), door_prizes), wither),
+                (((((((assassinations, foul), count), steals), aurora_photos), cheer), door_prizes), wither),
                 efflorescence,
             )| ParsedEventMessage::Foul {
                 foul,
@@ -1211,6 +1208,7 @@ fn pitch<'parse, 'output: 'parse>(
                 door_prizes,
                 wither,
                 efflorescence,
+                assassinations,
             },
         );
 
