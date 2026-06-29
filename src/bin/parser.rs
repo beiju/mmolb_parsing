@@ -800,8 +800,20 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             wither,
             efflorescence,
             surprise_strike,
+            assassinations,
         } => {
-            format!("strike: {strike}, steals: {}, cheer: {}, aurora_photos: {}, ejection: {}, door_prizes: {}, wither: {}, efflorescence: {}, surprise_strike: {}", steals.len(), cheer.is_some(), aurora_photos.is_some(), ejection.is_some(), door_prizes.len(), wither.is_some(), efflorescence.len(), surprise_strike)
+            format!(
+                "strike: {strike}, steals: {}, cheer: {}, aurora_photos: {}, ejection: {}, door_prizes: {}, wither: {}, efflorescence: {}, surprise_strike: {}, assassinations: {}",
+                steals.len(),
+                cheer.is_some(),
+                aurora_photos.is_some(),
+                ejection.is_some(),
+                door_prizes.len(),
+                wither.is_some(),
+                efflorescence.len(),
+                surprise_strike,
+                assassinations.len(),
+            )
         }
         ParsedEventMessage::Foul {
             foul,
@@ -814,7 +826,16 @@ fn check<S>(event: &ParsedEventMessage<S>) -> String {
             efflorescence,
             assassinations,
         } => {
-            format!("foul: {foul}, assassinations: {}, steals: {}, cheer: {}, aurora_photos: {}, door_prizes: {}, wither: {}, efflorescence: {}", assassinations.len(), steals.len(), cheer.is_some(), aurora_photos.is_some(), door_prizes.len(), wither.is_some(), efflorescence.len())
+            format!(
+                "foul: {foul}, steals: {}, cheer: {}, aurora_photos: {}, door_prizes: {}, wither: {}, efflorescence: {}, assassinations: {}",
+                steals.len(),
+                cheer.is_some(),
+                aurora_photos.is_some(),
+                door_prizes.len(),
+                wither.is_some(),
+                efflorescence.len(),
+                assassinations.len(),
+            )
         }
         ParsedEventMessage::Walk {
             batter: _,

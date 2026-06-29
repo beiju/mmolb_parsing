@@ -1151,7 +1151,8 @@ fn pitch<'parse, 'output: 'parse>(
             },
         );
 
-    let strike = sentence(preceded(tag("Strike, "), try_from_word))
+    let strike = many0(assassination)
+        .and(sentence(preceded(tag("Strike, "), try_from_word)))
         .and(cut((sentence(score_update), opt(tag(" 😲 Surprise Strike!")).map(|opt| opt.is_some()), many0(base_steal_sentence))))
         .and(opt(preceded(tag(" "), aurora(parsing_context))))
         .and(opt(preceded(tag(" "), cheer(parsing_context))))
@@ -1164,7 +1165,7 @@ fn pitch<'parse, 'output: 'parse>(
                 (
                     (
                         (
-                            (((strike, (count, surprise_strike, steals)), aurora_photos), cheer),
+                            ((((assassinations, strike), (count, surprise_strike, steals)), aurora_photos), cheer),
                             ejection,
                         ),
                         door_prizes,
@@ -1183,6 +1184,7 @@ fn pitch<'parse, 'output: 'parse>(
                 wither,
                 efflorescence,
                 surprise_strike,
+                assassinations,
             },
         );
 

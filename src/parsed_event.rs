@@ -6,6 +6,7 @@ use std::{
     iter::once,
     str::FromStr,
 };
+use itertools::Itertools;
 use strum::{Display, EnumDiscriminants, EnumString, IntoStaticStr};
 use thiserror::Error;
 
@@ -134,6 +135,7 @@ pub enum ParsedEventMessage<S> {
         wither: Option<WitherStruggle<S>>,
         efflorescence: Vec<Efflorescence<S>>,
         surprise_strike: bool,
+        assassinations: Vec<Assassination<S>>
     },
     Foul {
         foul: FoulType,
@@ -1125,7 +1127,12 @@ impl<S: Display> ParsedEventMessage<S> {
                 wither,
                 efflorescence,
                 surprise_strike,
+                assassinations,
             } => {
+                let assassinations = assassinations.iter()
+                    .map(|ass| ass.unparse())
+                    .chain(once(String::new()))
+                    .join(" ");
                 let steals: Vec<String> = once(String::new())
                     .chain(steals.iter().map(|steal| steal.to_string()))
                     .collect();
@@ -1156,7 +1163,7 @@ impl<S: Display> ParsedEventMessage<S> {
                     .then(|| " 😲 Surprise Strike!")
                     .unwrap_or("");
 
-                format!("{space}Strike, {strike}. {}-{}.{surprise_strike}{steals}{aurora_photos}{ejection}{cheer}{door_prizes}{wither}{efflorescence}", count.0, count.1)
+                format!("{assassinations}{space}Strike, {strike}. {}-{}.{surprise_strike}{steals}{aurora_photos}{ejection}{cheer}{door_prizes}{wither}{efflorescence}", count.0, count.1)
             }
             Self::Foul {
                 foul,
